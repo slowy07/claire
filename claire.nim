@@ -24,4 +24,5 @@ include claire/utils/functional,
         claire/data_struc, 
         claire/accessor,
         claire/display,
-        src/display.nim
+        src/display,
+        src/init
