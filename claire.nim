@@ -19,4 +19,9 @@
 # SOFTWARE.
 
 import sequtils, strutils
-include claire/utils/functional, claire/data_struc, claire/accessor, src/display.nim
+include claire/utils/functional, 
+        clair/utils/nested_containers,
+        claire/data_struc, 
+        claire/accessor,
+        claire/display,
+        src/display.nim

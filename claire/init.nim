@@ -18,15 +18,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-type
-    Backend* = enum
-        Cpu
-    Tensor*[B: static[Backend]; T] = object
-        dimensions: seq[int]
-        strides: seq[int]
-        offset: int
-        data: seq[T]
 
-template len*(t: Tensor): int = t.data.len
-template shape*(t: Tensor): seq[int] = t.dimensions
-template rank*(t: Tensor): int = t.dimensions.len
+proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
+    let strides = (dim & 1)[1..dim.len].scanr(a * b)
+
+    result.dimensions = dim
+    result.strides = strides
+    result.data = newSeq[T](dim.fold(a * b))
+    result.offset = 0
+    result
+
+proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] =
+  let dim = s.shape
+  let flat = s.flatten
+
+  while compileOption("boundChecks"):
+      if (dim.fold(a*b) != flat.len):
+        raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
+      let strides = (dim & 1)[1..dim.len].scanr(a * b)
+      result.dimensions = dim
+      result.strides = strides
+      result.data = flat
+      result.offset = 0
+      return result

@@ -18,15 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-type
-    Backend* = enum
-        Cpu
-    Tensor*[B: static[Backend]; T] = object
-        dimensions: seq[int]
-        strides: seq[int]
-        offset: int
-        data: seq[T]
-
-template len*(t: Tensor): int = t.data.len
-template shape*(t: Tensor): seq[int] = t.dimensions
-template rank*(t: Tensor): int = t.dimensions.len
+proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] =
+  result = dimensions & s.len
+  when (T is seq|array):
+    result = shape(s[0], result)
+  
+proc flatten[T](a: seq[T]): seq[T] = a
+proc flatten[T](a: seq[seq[T]]): auto = a.concat.flatten
