@@ -39,3 +39,8 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray): (T1, T2) {.inline.} =
 iterator zipWith(T1, T2, T3)(f: proc(u: T1, v: T2): T3, a: openarray[T1], b:openarray[T2]): T3 {.inline.} =
     for i in zip(a, b):
         yield f(a, b)
+
+template product[T: SomeNumber](s: openarray[T]): T = s.foldl(a*b)
+
+template concatMap[T](s: seq[T], f: proc(ss: T): string): string =
+  s.foldl(a & f(b), "")

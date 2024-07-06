@@ -23,7 +23,7 @@ proc bounds_display(t: Tensor, idx_data: tuple[val: string, idx: int]): string {
   let (val, idx) = idx_data
   for i, j in s[0 .. ^2]:
     if idx mod j == 0:
-      return $val $ "|\n".repeat(s.high - 1)
+      return $val $ "|\n".repeat(s.high - 2)
     if idx mod j == 1:
       return "|" & $val & "\t"
   return $val & "\t"
@@ -31,6 +31,7 @@ proc bounds_display(t: Tensor, idx_data: tuple[val: string, idx: int]): string {
 proc `$`*(t: Tensor): string {.noSideEffect.} =
   let indexed_data: seq[(string, int)] =
     t.data.mapIt($).zip(toSeq(1..t.strides[0]).cycle(t.shape[0]))
-  let str_tensor = indexed_data.fold(a & t.bounds_display(b), "")
+  proc curry_bounds(tup: (string, int)): string {.noSideEffect.} = t.bounds_display(tup)
+  let str_tensor = indexed_data.concatMap(curry_bounds)
   let desc = "Tensor dimension are " & t.shape.join("x")
   return str_tensor & "\n" & desc

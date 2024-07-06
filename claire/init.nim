@@ -24,7 +24,7 @@ proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
 
     result.dimensions = dim
     result.strides = strides
-    result.data = newSeq[T](dim.fold(a * b))
+    result.data = newSeq[T](dim.product)
     result.offset = 0
     result
 
@@ -33,7 +33,7 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] =
   let flat = s.flatten
 
   while compileOption("boundChecks"):
-      if (dim.fold(a*b) != flat.len):
+      if (dim.product != flat.len):
         raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
       let strides = (dim & 1)[1..dim.len].scanr(a * b)
       result.dimensions = dim
