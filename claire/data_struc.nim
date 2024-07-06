@@ -22,20 +22,19 @@ type
     Backend* = enum
         Cpu
     Tensor*[B: static[Backend]; T] = object
-        dimsizes: seq[int]
+        dimensions: seq[int]
         strides: seq[int]
         offset: int
         data: seq[T]
 
 template len*(t: Tensor): int = t.data.len
-template dim*(t: Tensor): seq[int] = t.dimsizes
-template rank*(t: Tensor): int = t.dimsizes.high
-template shape*(t: Tensor): int = t.dimsizes
+template shape*(t: Tensor): seq[int] = t.dimensions
+template rank*(t: Tensor): int = t.dimensions.high
 
 proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
     let strides = (dim & 1)[1..dim.len].scanr(a * b)
 
-    result.dimsizes = dim
+    result.dimensions = dim
     result.strides = strides
     result.data = newSeq[T](dim.fold(a * b))
     result.offset = 0

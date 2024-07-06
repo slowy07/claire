@@ -19,7 +19,9 @@
 # SOFTWARE.
 
 template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): int =
-    assert(idx.high == t.rank, "number of arguments is different from tensor dimension")
+    when CompileOption("boundChecks"):
+        if idx.high != t.rank:
+          raise newException(IndexError, "number of arguments: " & $(idx.len) & ", is defferent from tensor rank: " & $(t.rank))
     var real_idx = t.offset
     for i, j in zip(t.strides, idx):
         real_idx += i * j
