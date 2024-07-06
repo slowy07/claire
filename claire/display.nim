@@ -18,5 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils
-include claire/utils/functional, claire/data_struc, claire/accessor, src/display.nim
+proc bounds_display(t: Tensor, idx_data: tuple[val: string, idx: int]): string {.noSideEffect.} = 
+  let s = t.strides
+  let (val, idx) = idx_data
+  for i, j in s[0 .. ^2]:
+    if idx mod j == 0:
+      return $val $ "|\n".repeat(s.high - 1)
+    if idx mod j == 1:
+      return "|" & $val & "\t"
+  return $val & "\t"
+
+proc `$`*(t: Tensor): string {.noSideEffect.} =
+  let indexed_data: seq[(string, int)] =
+    t.data.mapIt($).zip(toSeq(1..t.strides[0]).cycle(t.shape[0]))
+  let str_tensor = indexed_data.fold(a & t.bounds_display(b), "")
+  let desc = "Tensor dimension are " & t.shape.join("x")
+  return str_tensor & "\n" & desc
