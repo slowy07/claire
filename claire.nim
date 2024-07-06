@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils
+import sequtils, strutils, algorithm
 include claire/utils/functional, 
         clair/utils/nested_containers,
         claire/data_struc, 

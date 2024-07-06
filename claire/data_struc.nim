@@ -24,9 +24,11 @@ type
     Tensor*[B: static[Backend]; T] = object
         dimensions: seq[int]
         strides: seq[int]
-        offset: int
+        offset: ptr T
         data: seq[T]
 
+
+template dim(t: Tensor): seq[int] = t.dimensions
 template len*(t: Tensor): int = t.data.len
-template shape*(t: Tensor): seq[int] = t.dimensions
+template shape*(t: Tensor): seq[int] = t.dimensions.reversed
 template rank*(t: Tensor): int = t.dimensions.len
