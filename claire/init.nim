@@ -19,14 +19,15 @@
 # SOFTWARE.
 
 
-proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
+proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
+    let dim = shape.reserved
     let strides = (dim & 1)[1..dim.len].scanr(a * b)
 
     result.dimensions = dim
     result.strides = strides
     result.data = newSeq[T](dim.product)
     result.offset = addr result.data[0]
-    result
+    return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] =
   let dim = s.shape
