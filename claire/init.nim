@@ -30,7 +30,7 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] 
     return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] =
-  let dim = s.shape
+  let dim = s.shape.reversed
   let flat = s.flatten
 
   while compileOption("boundChecks"):
