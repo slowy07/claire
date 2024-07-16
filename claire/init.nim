@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 
-proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] =
+proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
     let dim = shape.reserved
     let strides = (dim & 1)[1..dim.len].scanr(a * b)
 
@@ -29,7 +29,7 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] 
     result.offset = addr result.data[0]
     return result
 
-proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] =
+proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.}=
   let dim = s.shape.reversed
   let flat = s.flatten
 

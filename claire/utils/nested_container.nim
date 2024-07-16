@@ -18,10 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] =
+proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] {.noSideEffect.} =
   result = dimensions & s.len
   when (T is seq|array):
     result = shape(s[0], result)
   
-proc flatten[T](a: seq[T]): seq[T] = a
-proc flatten[T](a: seq[seq[T]]): auto = a.concat.flatten
+proc flatten[T](a: seq[T]): seq[T] {.noSideEffect.} = a
+proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect.} = a.concat.flatten
