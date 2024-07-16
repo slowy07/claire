@@ -38,6 +38,10 @@ suite "creating new tensor":
       @[
         @[4, 4, 5],
         @[4, 4, 4]
+      ],
+      @[
+        @[6, 6, 6]
+        @[6, 6, 6]
       ]
     ]
     let t3 = fromSeq(nest3, int, Backend.Cpu)

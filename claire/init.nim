@@ -20,24 +20,22 @@
 
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
-    let dim = shape.reserved
-    let strides = (dim & 1)[1..dim.len].scanr(a * b)
-
-    result.dimensions = dim
-    result.strides = strides
-    result.data = newSeq[T](dim.product)
-    result.offset = addr result.data[0]
-    return result
+  let strides = (shape & 1)[1..shape.len].scanr(a * b)
+  result.dimensions = shape.reversed
+  result.strides = strides
+  result.data = newSeq[T](shape.product)
+  result.offset = addr result.data[0]
+  return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.}=
-  let dim = s.shape.reversed
+  let shape = s.shape
   let flat = s.flatten
 
   while compileOption("boundChecks"):
-      if (dim.product != flat.len):
+      if (shape.product != flat.len):
         raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
-      let strides = (dim & 1)[1..dim.len].scanr(a * b)
-      result.dimensions = dim
+      let strides = (shape & 1)[1..shape.len].scanr(a * b)
+      result.dimensions = shape.reversed
       result.strides = strides
       result.data = flat
       result.offset = addr result.data[0]
