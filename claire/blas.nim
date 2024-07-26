@@ -18,12 +18,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas
-include claire/utils/functional, 
-        clair/utils/nested_containers,
-        claire/data_struc, 
-        claire/accessor,
-        claire/display,
-        src/display,
-        src/init,
-        src/blas
+template matmul[B: static[Backend],T](a, b, result: Tensor[B, T]): auto =
+  let
+    rowA = a.shape[0]
+    colA = a.shape[1]
+    rowB = b.shape[0]
+    colB = b.shape[1]
+
+  when compileOption("boundChecks"):
+    if colA != rowB:
+      raise newException(IndexError, "Number of columns in the first matrix: " & $(colA) & ", must be the same as the number of rows in the second matrix: " & $(rowB))
+
+  result.data = newSeq[T](rowA * colB)
+  result.dimensions = @[colB, rowA]
+  result.strides = @[rowA, 1]
+  result.offset = addr result.data[0]
+
+  gemm(rowMajor, noTranspose, noTranspose, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
+
+proc `*`*[B, T](a, b: Tensor[B, T]): Tensor[B, T] {.inline, noSideEffect.} =
+  if (a.rank == 2 and b.rank == 2): matmul(a, b, result)
+  else: raise newException(ValueError, "Tensor multiplications, not implemented for ranks other thank 2")
+    
+    
