@@ -20,7 +20,8 @@
 
 import sequtils, strutils, algorithm, nimblas
 include claire/utils/functional, 
-        clair/utils/nested_containers,
+        claire/utils/nested_containers,
+        claire/utils/pointers_arithmetic,
         claire/data_struc, 
         claire/accessor,
         claire/display,
