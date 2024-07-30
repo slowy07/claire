@@ -6,6 +6,7 @@ suite "accessing, testing tensor value":
         var a = newTensor(@[2, 3, 4], int, Backend.Cpu)
         a[1, 2, 2] = 122
         check: a[1, 2, 2] == 122
+        # echo a
         
     var b = newTensor(@[3, 4], int, Backend.Cpu)
     b[1, 2] = 12
