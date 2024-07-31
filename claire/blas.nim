@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-template matmul_blas[B;T: SomeReal](a, b, result: Tensor[B, T]): auto =
+template matmul_blas[B;T: SomeReal](a, b, result: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
   let
     rowA = a.shape[0]
     colA = a.shape[1]
