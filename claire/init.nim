@@ -25,7 +25,6 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] 
   result.strides = strides
   result.data = newSeq[T](shape.product)
   result.offset = addr result.data[0]
-  return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.}=
   let shape = s.shape
@@ -39,4 +38,3 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noS
       result.strides = strides
       result.data = flat
       result.offset = addr result.data[0]
-      return result
