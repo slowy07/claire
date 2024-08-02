@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math
+import sequtils, strutils, algorithm, nimblas, math, typetraits
 include claire/utils/functional, 
         claire/utils/nested_containers,
         claire/utils/pointers_arithmetic,

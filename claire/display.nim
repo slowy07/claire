@@ -28,10 +28,10 @@ proc bounds_display(t: Tensor, idx_data: tuple[val: string, idx: int]): string {
       return "|" & $val & "\t"
   return $val & "\t"
 
-proc `$`*(t: Tensor): string {.noSideEffect.} =
+proc `$`*[B,T](t: Tensor[B, T]): string {.noSideEffect.} = 
   let indexed_data: seq[(string, int)] =
     t.data.mapIt($).zip(toSeq(1..t.strides[0]).cycle(t.dim[0]+1))
   proc curry_bounds(tup: (string, int)): string {.noSideEffect.} = t.bounds_display(tup)
   let str_tensor = indexed_data.concatMap(curry_bounds)
-  let desc = "Tensor dimension are " & t.shape.join("x")
+  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\"on backend \"" & $B & "\""
   return desc & & "\n" & str_tensor
