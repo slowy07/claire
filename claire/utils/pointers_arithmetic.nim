@@ -36,5 +36,7 @@ template ptrMath(body: untyped) =
 
   template `[]=`[T](p: ptr T, off: int, val: T) =
     (p + off)[] = val
-
+  
+  template `-`[T](off_p: ptr T, p: ptr T): int =
+    (cast[ByteAddress](off_p) -% cast[ByteAddress](p)) div sizeof(p[])
   body
