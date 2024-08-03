@@ -15,4 +15,3 @@ suite "accessing, testing tensor value":
     check: b[0, 0] == 999
     b[2, 3] = 111
     check: b[2, 3] == 111
-    b[2, 0] = 555

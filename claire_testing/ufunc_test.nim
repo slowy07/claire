@@ -32,3 +32,8 @@ suite "Universal functions":
 
     when compiles (td == te): check: false
     check: td.fmap(stringify) == te
+
+    check: td.fmap(stringify) == ta
+    check: td.fmap(stringify)[0, 1] == "4"
+    expect(IndexError):
+      discard td.fmap(stringify)[1, 3]

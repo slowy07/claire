@@ -46,7 +46,11 @@ suite "creating new tensor":
     ]
     let t3 = fromSeq(nest3, int, Backend.Cpu)
     check: t3.rank == 3
-    check: t3.shape == @[3, 2, 3]
+    check: t3.shape == @[4, 2, 3]
+
+    let u = @[@[1.0, -1, 2], @[0.0, -1]]
+    expect(IndexError):
+      discard fromSeq(u, float64, Backend.Cpu)
 
   test "check tensor shape is row by-column order":
     let s = @[@[1, 2, 3], @[3, 2, 1]]

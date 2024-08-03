@@ -20,22 +20,37 @@
 
 type
     Backend* = enum
+        # backend update
         Cpu
+        Cuda
+        OpenCL
+        Magma
+    
+    # StrideKind = enum
+    # DataKind = enum
+      # Dense
+      # Sparse
+
     Tensor*[B: static[Backend]; T] = object
         dimensions: seq[int]
         strides: seq[int]
         offset: ptr T
         data: seq[T]
 
-
-template dim(t: Tensor): seq[int] = t.dimensions
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.dimensions.reversed
 template rank*(t: Tensor): int = t.dimensions.len
+template isRowMajor(t: Tensor): bool = t.strides[t.strides.high] == 1
+
+template offset_to_index[B, T](t: Tensor[B, T]): int =
+  ptrMath:
+    let d0: ptr T = unsafeAddr(t.data[0])
+    let offset_idx: int = t.offset - d0
+  offset_idx
 
 proc `==`*[B, T](a, b: Tensr[B, T]): bool {.noSideEffect.} =
   if a.dim != b.dim: return false
   elif a.strides != b.strides: return false
-  elif a.offset[] != b.offset[]: return false
+  elif offset_to_index(a) != offset_to_index(b): return false
   elif a.data != b.data: return false
   else: return true

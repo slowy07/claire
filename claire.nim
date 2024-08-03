@@ -27,5 +27,5 @@ include claire/utils/functional,
         claire/display,
         src/display,
         src/init,
+        src/ufunc,
         src/blas
-        src/ufunc
