@@ -32,3 +32,34 @@ proc `[]`*[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): T {.noSid
 
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B, T], idx: varargs[int], val: T) {.noSideEffect.} =
   t.data[t.getIndex(idx)] = val
+
+type
+  IterKind = enum Values, Coord, MemOffset, ValCoord, ValMemOffset
+
+template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
+  var coord = newSeq[int](t.rank)
+  var backstrides: seq[int] = @[]
+  for i, j in zip(t.strides, t.shape): backstrides.add(i*(j-1))
+  
+  var iter_pos = t.offset
+
+  for i in 0..<t.data.len:
+    when strider == IterKind.Values: yield t.data[iter_pos]
+    elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)
+    elif strider == IterKind.MemOffset: yield iter_pos
+    elif strider == IterKind.ValMemOffset: yield (t.data[iter_pos], iter_pos)
+
+    for k in countdown(t.rank - 1, 0):
+      if coord[k] < t.shape[k]-1:
+          coord[k] += 1
+          iter_pos += t.strides[k]
+          break
+      else:
+        coord[k] = 0
+        iter_pos -= backstrides[k]
+
+iterator items*[B, T](t: Tensor[B,T]): T {.inline, noSideEffect.} =
+  t.strided_iteration(IterKind.Values)
+
+iterator pairs*[B, T](t: Tensor[B, T]): (T, seq[int]) {.inline, noSideEffect.} =
+  t.strided_iteration(IterKind.ValCoord)
