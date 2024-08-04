@@ -40,7 +40,15 @@ type
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.dimensions.reversed
 template rank*(t: Tensor): int = t.dimensions.len
-template isRowMajor(t: Tensor): bool = t.strides[t.strides.high] == 1
+template strides*(t: Tensor): seq[int] = t.strides
+
+proc is_C_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
+  result = t.strides.isSorted(system.cmp[int], SortOrder.Descending)
+  result = result and t.strides[t.strides.high] == 1
+
+proc is_F_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
+  result = t.strides.isSorted(system.cmp[int], SortOrder.Ascending)
+  result = result and t.strides[0] == 1
 
 template offset_to_index[B, T](t: Tensor[B, T]): int =
   ptrMath:
