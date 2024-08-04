@@ -34,7 +34,7 @@ type
     Tensor*[B: static[Backend]; T] = object
         dimensions: seq[int]
         strides: seq[int]
-        offset: ptr T
+        offset: int
         data: seq[T]
 
 template len*(t: Tensor): int = t.data.len
@@ -50,15 +50,11 @@ proc is_F_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
   result = t.strides.isSorted(system.cmp[int], SortOrder.Ascending)
   result = result and t.strides[0] == 1
 
-template offset_to_index[B, T](t: Tensor[B, T]): int =
-  ptrMath:
-    let d0: ptr T = unsafeAddr(t.data[0])
-    let offset_idx: int = t.offset - d0
-  offset_idx
-
 proc `==`*[B, T](a, b: Tensr[B, T]): bool {.noSideEffect.} =
   if a.dim != b.dim: return false
   elif a.strides != b.strides: return false
-  elif offset_to_index(a) != offset_to_index(b): return false
+  elif a.offset != b.offset: return false
   elif a.data != b.data: return false
   else: return true
+
+template get_data_ptr[B, T](t: Tensor[B, T]): ptr T = unsafeAddr(t.data[0])

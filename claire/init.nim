@@ -37,4 +37,4 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noS
       result.dimensions = shape.reversed
       result.strides = strides
       result.data = flat
-      result.offset = addr result.data[0]
+      result.offset = 0

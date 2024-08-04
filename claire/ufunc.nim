@@ -19,14 +19,10 @@
 # SOFTWARE.
 
 proc fmap*[B: static[Backend], T, U](t: Tensor[B, T], g: T -> U): Tensor[B, U] {.noSideEffect.} =
-  let offset_idx = t.offset_to_index
-
   result.dimensions = t.dimensions
   result.strides = t.strides
+  result.offset = t.offset
   result.data = t.data.map(g)
-
-  ptrMath:
-    result.offset = addr(result.data[0]) + offset_idx
 
 template makeUniversal*(func_name: untyped) =
   proc func_name*(t: Tensor): Tensor = t.fmap(func_name)

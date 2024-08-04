@@ -36,7 +36,7 @@ template check_matmat(a, b: Tensor) =
       raise newException(IndexError, "number of column in the first matrix: " & $(colA) & ", must be the same as the number of rows in the second matrix: " & $(rowB))
   if a.strides[1] != 1 or b.strides[1] != 1:
     raise newException(ValueError, "only Row-Major matrices are supported")
-  if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+  if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the matrices has a non-0 offset")
 
 template check_matvec(a, b: Tensor) =
@@ -45,24 +45,24 @@ template check_matvec(a, b: Tensor) =
 
   if colA != rowB:
     raise newException(IndexError, "number of columns in the matrix: " & $(colA) & ", must be as the number of rows in the vector: " & $(rowB))
-  if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+  if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "matrice and/or vector have a non-0 offset")
 
 template check_dot_prod(a, b: Tensor) =
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "dot product is only supported for vector (tensor of rank 1)")
   if a.dimensions != b.dimensions: raise newException(ValueError, "vector should be the same length")
-  if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+  if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the vector has a non-0 offset")
 
 template check_add(a, b: Tensor) =
   if a.strides != b.strides:
     raise newException(ValueError, "both tensor should have the exact same shape")
-  if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+  if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the vector has a non-0 offset")
 
 proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_dot_prod(a, b)
-  return dot(a.dimensions[0], a.offset, 1, b.offset, 1)
+  return dot(a.dimensions[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
 
 proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_dot_prod(a, b)
@@ -74,7 +74,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   result.data = newSeq[T](a.data.len)
   result.dimensions = a.dimensions
   result.strides = a.strides
-  result.offset = addr result.data[0]
+  result.offset = 0
 
   var i = 0
   for ai, bi in zip(a.data, b.data):
@@ -114,14 +114,17 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu, T], a_tr, b_
   result.data = newSeq[T](rowA * colB)
   result.dimensions = @[colB, rowA]
   result.strides = @[rowA, 1]
-  result.offset = addr result.data[0]
+  result.offset = 0
+  let a_data = get_data_ptr(a)
+  let b_data = get_data_ptr(b)
+  let res_data = get_data_ptr(result)
   
   if a_tr == TransposeType.noTranspose and b_tr == TransposeType.noTranspose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset colB, 0, result.offset, colB)
+    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB , 1, a_data, colA, b_data, colB, 0, res_data, colB)
   elif a_tr == TransposeType.TransposeType and b_tr == TransposeType.noTranspose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, colB, 0, result.offset, colB)
+    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, colB, 0, res_data, colB)
   elif a_tr == TransposeType.noTranspose and b_tr == TransposeType.tranpose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, rowB, 0, result.offset, colB)
+    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, rowB, 0, res_data, colB)
   else: raise newException(ValueError, "the transpose types: " & $a_tr & " or " & $b_tr & " is not supported")
 
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu]): auto =
@@ -134,9 +137,15 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu]): auto =
   result.data = newSeq[T](rowA)
   result.dimensions = @[rowA]
   result.strides = @[1]
-  result.offset = addr result.data[0]
+  result.offset = 0
+  let a_data = get_data_ptr(a)
+  let b_data = get_data_ptr(b)
+  let res_data = get_data_ptr(result)
 
-  gemv(rowMajor, a_tr, rowA, rowB, 1, a.offset, colA, b.offset, 1, 0, result.offset, 1)
+  if a_tr == TransposeType.noTranspose:
+    gemv(rowMajor, a_tr, rowA, rowB, 1, a_data, colA, b_data, 1, 0, res_data, 1)
+  else:
+    gemv(colMajor, noTranspose, rowA, rowB, 1, a_data, rowA, b_data, 1, 0, res_data, 1)
 
 template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu, T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto = 
   if a.rank == 2 and b.rank == 2: matmat_blas(a, b, res, a_tr, b_tr)
