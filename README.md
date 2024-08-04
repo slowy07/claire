@@ -33,11 +33,12 @@ ffset is currently a `pointer`. for best safety and reduced complexity it could 
 
 `data` is currently stored in `"seq"` that always deep copy on assignment. taking the transpose of a tensor will allocate new memory (unless optimized away by the compiler)
 
-about quest: should i implementing shallow copy to saving memory (example transpose) or trust in Nim/CUDA GC ?
+about quest: should i implemting shallow copy / ref seq or object for save memory (example transpose) or trust in Nim / CUDA to make proper memory optimization?
 
 if are yes
-- how to make sure that can modify in-place if shallow copy is allow ?
-- how hard will it be to extend claire for others
+- how to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
+- to avoid refence couting, would it to better to always copy-on-writte, in that case wouldn't it be better to pay the cst upfront on assignment?
+- how hard will it be to code claire to avoid cause copy-on-writte was missed
 
 information: https://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#reference-counting
 

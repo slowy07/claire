@@ -18,15 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math, typetraits
-include claire/utils/functional, 
-        claire/utils/nested_containers,
-        claire/utils/pointers_arithmetic,
-        claire/data_struc, 
-        claire/accessor,
-        claire/display,
-        src/display,
-        src/init,
-        src/ufunc,
-        src/shapeshifting,
-        src/blas
+proc transpose*(T: Tensor): Tensor {.noSideEffect.} =
+  let offset_idx = t.offset_to_index
+  result.dimensions = t.dimensions.reversed
+  result.strides = t.strides.reversed
+  result.data = t.data
+  ptrMath:
+    result offset = addr(result.data[0]) + offset_idx
