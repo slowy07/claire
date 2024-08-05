@@ -3,9 +3,12 @@ author = "slowy07"
 description = "library tensor array"
 license = "MIT License"
 
-srcDir = "src"
-
 requires "nim >= 0.15.1", "nimblas >= 0.1.3"
+
+## BLAS support
+switch("define", "openblas")
+switch("clibdir", "/usr/local/opt/openblas/lib")
+switch("cinclides", "/usr/local/opt/openblas/incude")
 
 ## Testing task
 proc test(name: string) =
