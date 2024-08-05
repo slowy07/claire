@@ -19,14 +19,14 @@
 # SOFTWARE.
 
 import sequtils, strutils, algorithm, nimblas, math, typetraits
-include claire/utils/functional, 
-        claire/utils/nested_containers,
-        claire/utils/pointers_arithmetic,
-        claire/data_struc, 
-        claire/accessor,
-        claire/display,
-        src/display,
-        src/init,
-        src/ufunc,
-        src/shapeshifting,
-        src/blas
+include src/claire/utils/functional, 
+        src/claire/utils/nested_containers,
+        src/claire/utils/pointers_arithmetic,
+        src/claire/data_struc, 
+        src/claire/accessor,
+        src/claire/display,
+        src/claire/display,
+        src/claure/init,
+        src/claire/ufunc,
+        src/claire/shapeshifting,
+        src/claire/blas

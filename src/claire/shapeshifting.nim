@@ -19,7 +19,6 @@
 # SOFTWARE.
 
 proc transpose*(T: Tensor): Tensor {.noSideEffect.} =
-  let offset_idx = t.offset
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
   result.offset = t.offset
