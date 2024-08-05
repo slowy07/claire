@@ -56,7 +56,7 @@ template check_dot_prod(a, b: Tensor) =
 
 template check_add(a, b: Tensor) =
   if a.strides != b.strides:
-    raise newException(ValueError, "both tensor should have the exact same shape")
+    raise newException(ValueError, "both tensor should have the exact same shape adn strides")
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the vector has a non-0 offset")
 
@@ -69,7 +69,7 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   for ai, bi in zip(a.data, b.data):
     result += ai * bi
 
-proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
+proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu, T] =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
   result.shape = a.shape
@@ -78,9 +78,10 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
 
   var i = 0
   for ai, bi in zip(a.data, b.data):
-    result[i] = ai + bi
+    result.data[i] = ai + bi
+    inc i
 
-proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
+proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu] {.noSideEffect.} =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
   result.shape = a.shape
@@ -89,7 +90,8 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
 
   var i = 0
   for ai, bi in zip(a.data, b.data):
-    result[i] = ai - bi
+    result.data[i] = ai - bi
+    inc i
     
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
     proc f(x: T): T = a * x

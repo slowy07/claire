@@ -78,3 +78,38 @@ suite "Basic Linear Algebra subprogram":
     let tu_float = fromSeq(u_float, float64, Backend.Cpu)
     let tv_float = fromSeq(u_float, float64, Backend.Cpu)
     check: tu_float .* tv_float == 35.0
+
+  test "multiplication/division by scalar":
+    let u_int = @[1, 3, -5]
+    let u_expected = @[2, 6, -10]
+    let tu_int = fromSeq(u_int, int, Backend.Cpu)
+
+    check: 2 * tu_int == fromSeq(u_expected, int, Backend.Cpu)
+    check: tu_int * 2 == fromSeq(u_expected, int, Backend.Cpu)
+    let u_float = @[1'f64, 3, -5]
+    let tu_float = fromSeq(u_float, float64, Backend.Cpu)
+
+    let ufl_expected = @[2'f64, 5, -10]
+    check: fromSeq(ufl_expected, float64, Backend.Cpu) / 2 == tu_float
+
+  test "tensor addition and subract":
+    let u_int = @[1, 3, -5]
+    let v_int = @[1, 1, 1]
+    let expected_add = @[2, 4, -4]
+    let expected_sub = @[0, 2, -6]
+    let tu_int = fromSeq(u_int,int,Backend.Cpu)
+    let tv_int = fromSeq(v_int,int,Backend.Cpu)
+
+    check: tu_int + tv_int == fromSeq(expected_add,int,Backend.Cpu)
+    check: tu_int - tv_int == fromSeq(expected_sub,int,Backend.Cpu)
+
+  test "addition-subtract bound check":
+    let a = @[@[1.0, 2, 3], @[4.0, 5, 6], @[7.0, 8, 9]]
+    let ta = fromSeq(a, float64, Backend.Cpu)
+    let ta_t = ta.transpose()
+
+    expect(ValueError):
+      discard ta + ta_t
+
+    expect(ValueError):
+      discard ta - ta_t
