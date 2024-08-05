@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 proc fmap*[B: static[Backend], T, U](t: Tensor[B, T], g: T -> U): Tensor[B, U] {.noSideEffect.} =
-  result.dimensions = t.dimensions
+  result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
   result.data = t.data.map(g)

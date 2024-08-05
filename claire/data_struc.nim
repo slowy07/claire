@@ -32,14 +32,14 @@ type
       # Sparse
 
     Tensor*[B: static[Backend]; T] = object
-        dimensions: seq[int]
+        shape: seq[int]
         strides: seq[int]
         offset: int
         data: seq[T]
 
 template len*(t: Tensor): int = t.data.len
-template shape*(t: Tensor): seq[int] = t.dimensions.reversed
-template rank*(t: Tensor): int = t.dimensions.len
+template shape*(t: Tensor): seq[int] = t.shape
+template rank*(t: Tensor): int = t.shape.len
 template strides*(t: Tensor): seq[int] = t.strides
 
 proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect, inline.} =
@@ -50,11 +50,11 @@ proc is_C_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
   result = result and t.strides[t.strides.high] == 1
 
 proc is_F_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
-  result = t.strides.reversed == t.dimensions.shape_to_strides
+  result = t.strides.reversed == t.shape.reversed.shape_to_strides
   result = result and t.strides[0] == 1
 
-proc `==`*[B, T](a, b: Tensr[B, T]): bool {.noSideEffect.} =
-  if a.dim != b.dim: return false
+proc `==`*[B, T](a, b: Tensr[B, T]): bool {.noSideEffect, inline.} =
+  if a.shape != b.shape: return false
   elif a.strides != b.strides: return false
   elif a.offset != b.offset: return false
   elif a.data != b.data: return false

@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] {.noSideEffect.} =
-  result = dimensions & s.len
+proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.} =
+  result = parent_shape & s.len
   when (T is seq|array):
     result = shape(s[0], result)
   

@@ -50,7 +50,7 @@ template check_matvec(a, b: Tensor) =
 
 template check_dot_prod(a, b: Tensor) =
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "dot product is only supported for vector (tensor of rank 1)")
-  if a.dimensions != b.dimensions: raise newException(ValueError, "vector should be the same length")
+  if a.shape != b.shape: raise newException(ValueError, "vector should be the same length")
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the vector has a non-0 offset")
 
@@ -62,7 +62,7 @@ template check_add(a, b: Tensor) =
 
 proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_dot_prod(a, b)
-  return dot(a.dimensions[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
+  return dot(a.shape[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
 
 proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_dot_prod(a, b)
@@ -72,7 +72,7 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
 proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
-  result.dimensions = a.dimensions
+  result.shape = a.shape
   result.strides = a.strides
   result.offset = 0
 
@@ -83,7 +83,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
 proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
-  result.dimensions = a.dimensions
+  result.shape = a.shape
   result.strides = a.strides
   result.offset = addr result.data[0]
 
@@ -112,7 +112,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu, T], a_tr, b_
   when compileOption("boundChecks"): check_matmat(a, b)
 
   result.data = newSeq[T](rowA * colB)
-  result.dimensions = @[colB, rowA]
+  result.shape = @[rowA, colB]
   result.strides = @[rowA, 1]
   result.offset = 0
   let a_data = get_data_ptr(a)
@@ -135,7 +135,7 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu]): auto =
 
   when compileOption("boundChecks"): check_matvec(a, b)
   result.data = newSeq[T](rowA)
-  result.dimensions = @[rowA]
+  result.shape = @[rowA]
   result.strides = @[1]
   result.offset = 0
   let a_data = get_data_ptr(a)

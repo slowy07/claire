@@ -25,6 +25,10 @@ for deep learning on image, depth representing the color channel and change the 
 ## memory consendirations
 current CPU cache is 64 byte. tensor data structure at 32 bytes has an ideal size. however, every time retrieve the dimension and strides there is a pointer resolution + bounds checking for a static array. you can see data structure consideration section
 
+reference: [Copy semantic](https://forum.nim-lang.org/t/1793/5) "paremeter passing does'nt copy, `var x = foo()` doesn't copy but moves `let x = y` doesn't copy but moves, `var x = y` does copy but it can use shallowCopy instead of `=` for that"
+
+in depth ([information](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift)) for swift but applicable): performance, safety, and usability
+
 ## data structure consendirations
 
 dimension and strides have a static size known at runtime. they might the best implemting as VLAs (variable length array) from an indirection point of view. Inconvenient: 2 tensor will not fit in a cache line
