@@ -63,3 +63,16 @@ iterator items*[B, T](t: Tensor[B,T]): T {.inline, noSideEffect.} =
 
 iterator pairs*[B, T](t: Tensor[B, T]): (T, seq[int]) {.inline, noSideEffect.} =
   t.strided_iteration(IterKind.ValCoord)
+
+proc values[B, T](t: Tensor[B, T]): auto {.inline, noSideEffect.} =
+  return iterator(): T = t.strided_iteration(IterKind.Values)
+
+iterator zip[B1, T1, B2, T2](t1: Tensor[B1, T1], t2: Tensor[B2, T2]): (T1, T2) {.inline, noSideEffect.} =
+  let it1 = t1.values
+  let it2 = t2.values
+  while true:
+    let val1 = it1()
+    let val2 = it2()
+    if finised(it1) or finised(it2):
+      break
+    yield (val1, val2)

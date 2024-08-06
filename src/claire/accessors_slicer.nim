@@ -87,82 +87,83 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
 const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
 proc slicer*[B, T](t: Tensor[B, T], slice: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect} =
+  result = t
+  for i, slice in slices:
+    let a = if slice.a_from_end: result.shape[i] - slice.a else: slice.a
+    let b = if slice.b_from_end: result.shape[i] - slice.b else: slice.b
+    
+    when compileOption("boundChecks"): check_steps(a, b, slice.step)
+    result.offset += a * result.strides[i]
+    result.strides[i] *= slice.step
+    result.shape[i] = abs((b - a) div slice.step) + 1
+
+macro desugar(args: untyped): typed =
   var r = newNimNode(nnkArglist)
-  for nnk in children(args):
-        if nnk == ident("_"): r.add(ident("span"))
 
-        elif nnk.kind == nnkInfix:
-            if nnk[0] == ident(".."):
-                if nnk[1] == ident("_") and nnk[2] == ident("_"):
-                    r.add(ident("span"))
-                elif nnk[1] == ident("_") and nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") and nnk[2][1] == ident("_"):
-                        r.add(prefix(nnk[2][2], "..|"))
-                    elif nnk[2][0] == ident("|") or nnk[2][0] == ident("|+") or nnk[2][0] == ident("|-"):
-                        r.add(infix(prefix(nnk[2][1], ".."), $nnk[2][0], nnk[2][2]))
-                    else: r.add(nnk)
-                elif nnk[1] == ident("_"):
-                    r.add(infix(prefix(nnk[2], ".."), "|", newIntLitNode(1)))
-                elif nnk[2] == ident("_"):
-                    r.add(infix(nnk[1], "..|", newIntLitNode(1)))
-                elif nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") and nnk[2][1] == ident("_"):
-                        r.add(infix(nnk[1], "..|", nnk[2][2]))
-                    elif nnk[2][0] == ident("|+") and nnk[2][1] == ident("_"):
-                        r.add(infix(nnk[1], "..|+", nnk[2][2]))
-                    elif nnk[2][0] == ident("|-") and nnk[2][1] == ident("_"):
-                        r.add(infix(nnk[1], "..|-", nnk[2][2]))
-                    elif nnk[1].kind == nnkPrefix:
-                        if nnk[1][0] == ident("^"):
-                          r.add(prefix(infix(nnk[1][1], "..", nnk[2]), "^"))
-                        else: r.add(nnk)
-                    else: r.add(nnk)
+  for nnk in childern(args):
+    let nnk_joker = nnk == ident("_")
+    let nnk0_inf_dotdot = if nnk.kind == nnkInfix: nnk[0] == ident("..") else: false
+    let nnk0_inf_dotdot_alt = if nnk.kind == nnkInfix: nnk[0] == ident("..<") or nnk[0] == ident("..^") else: false
+    let nnk0_inf_dotdot_all = nnk0_inf_dotdot or nnk0_inf_dotdot_alt
+    let nnk0_inf_bar_all = if nnk.kind == nnkInfix: nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-") else: false
+    let nnk0_pre_dotdot_all =  if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^") else: false
+    let nnk1_joker = if nnk.kind == nnkInfix: nnk[1] == ident("_") else: false
+    let nnk10_hat = if nnk.kind == nnkInfix:
+                      if nnk[1].kind == nnkPrefix: nnk[1][0] == ident("^")
+                      else: false
+                    else: false
+    let nnk10_dotdot_pre_alt = if nnk.kind == nnkInfix:
+                                  if nnk[1].kind == nnkPrefix:
+                                    nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<")
+                                  else: false
+                              else: false
+    let nnk2_joker = if nnk.kind == nnkInfix: nnk[2] == ident("_") else: false
+    let nnk20_bar_pos = if nnk.kind == nnkInfix:
+                          if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|") or nnk[2][0] == ident("|+")
+                          else: false
+                        else: false
 
-                elif nnk[1].kind == nnkPrefix: 
-                    if nnk[1][0] == ident("^"):
-                        r.add(prefix(infix(nnk[1][1], "..", nnk[2]), "^"))
-                    else: r.add(nnk)
+    let nnk20_bar_min = if nnk.kind == nnkInfix:
+                          if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|-")
+                          else: false
+                        else: false
 
-                else:
-                    r.add(infix(nnk[1], "..", infix(nnk[2], "|", newIntLitNode(1))))
+    let nnk20_bar_all = nnk20_bar_pos or nnk20_bar_min
+    let nnk21_joker = if nnk.kind == nnkInfix:
+                        if nnk[2].kind == nnkInfix: nnk[2][1] == ident("_")
+                        else: false
+                      else: false
 
-
-            elif nnk[0] == ident("..<") or nnk[0] == ident("..^"):
-                if nnk[1] == ident("_") and nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") or nnk[2][0] == ident("|+") or nnk[2][0] == ident("|-"):
-                        r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2][1], $nnk[2][0], nnk[2][2])))
-                    else: r.add(nnk)
-                elif nnk[1] == ident("_"):
-                    r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
-
-
-                elif nnk[1].kind == nnkPrefix:
-                    if nnk[1][0] == ident("^"):
-                        r.add(prefix(infix(nnk[1][1], $nnk[0], nnk[2]), "^"))
-                    else: r.add(nnk)
-
-                elif nnk[2].kind == nnkInfix:
-
-                    r.add(nnk)
-
-                else:
-                    r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
-
-            elif nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-"):
-                if nnk[1].kind == nnkPrefix:
-                    if nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<"):
-                        ## [..^10|2, 3] into [0..^10|2, 3]
-                        r.add(infix(newIntLitNode(0), $nnk[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
-                    else: r.add(nnk)
-                else: r.add(nnk)
-            else: r.add(nnk)
-        elif nnk.kind == nnkPrefix:
-            if nnk[0] == ident("..") or nnk[0] == ident("..^") or nnk[0] == ident("..<"):
-                ## convert [..10, 3] to [0..10|1, 3]
-                r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
-            else: r.add(nnk)
-        else: r.add(nnk)
-    return r
+    if nnk_joker:
+      r.add(ident("span"))
+    elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
+      r.add(ident("span"))
+    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_min and nnk21_joker:
+      r.add(prefix(nnk[2][2], "..|-"))
+    elif nnk0_inf_dotdot_all and nnk1_joker and nnk20_bar_all:
+      r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2][1], $nnk[2][0], nnk[2][2])))
+    elif nnk0_inf_dotdot_all and nnk1_joker:
+      r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+    elif nnk0_inf_dotdot and nnk2_joker:
+      r.add(infix(nnk[1], "..|", newIntLitNode(1)))
+    elif nnk0_inf_dotdot and nnk20_bar_pos and nnk21_joker:
+      r.add(infix(nnk[1], "..|", nnk[2][2]))
+    elif nnk0_inf_dotdot and nnk20_bar_min and nnk21_joker:
+      raise newException(IndexError, "please use explicit end of range " & "instead of `_` when the steps are negative")
+    elif nnk0_inf_dotdot_all and nnk10_hat and nnk20_bar_all:
+      r.add(prefix(infix(nnk[1][1], $nnk[0], nnk[2]), "^"))
+    elif nnk0_inf_dotdot_all and nnk20_bar_all:
+      r.add(nnk)
+    elif nnk0_inf_dotdot_all:
+      r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+    elif nnk0_inf_bar_all and nnk10_dotdot_pre_alt:
+      r.add(infix(newIntLitNode(0), $[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
+    elif nnk0_pre_dotdot_all:
+      r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
+    else:
+      r.add(nnk)
+    
+  return r
 
 proc hasType(x: NimNode, t: stat[string]): bool {.compileTime.} =
   sameType(x, bindSym(t))

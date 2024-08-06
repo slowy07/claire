@@ -18,17 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math, typetraits, macros
-include src/claire/utils/functional, 
-        src/claire/utils/nested_containers,
-        src/claire/utils/pointers_arithmetic,
-        src/claire/data_struc, 
-        src/claire/accessor,
-        src/claire/accessors_slicer,
-        sec/claire/comparison
-        src/claire/display,
-        src/claire/display,
-        src/claure/init,
-        src/claire/ufunc,
-        src/claire/shapeshifting,
-        src/claire/blas
+proc `==`*[B,T](a, b: Tensor[B, T]): bool {.noSideEffect, inline.} =
+  if a.shape != b.shape: return false
+  result = true
+  for ai, bi in zip(a, b):
+    result = result and ai == bi

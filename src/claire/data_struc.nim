@@ -39,8 +39,9 @@ type
 
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.shape
-template rank*(t: Tensor): int = t.shape.len
 template strides*(t: Tensor): seq[int] = t.strides
+template offset*(t: Tensor): int = t.offset
+template rank*(t: Tensor): int = t.shape.len
 
 proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect, inline.} =
   return (shape & 1)[1..shape.len].scanr(a * b)
@@ -52,12 +53,5 @@ proc is_C_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
 proc is_F_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
   result = t.strides.reversed == t.shape.reversed.shape_to_strides
   result = result and t.strides[0] == 1
-
-proc `==`*[B, T](a, b: Tensr[B, T]): bool {.noSideEffect, inline.} =
-  if a.shape != b.shape: return false
-  elif a.strides != b.strides: return false
-  elif a.offset != b.offset: return false
-  elif a.data != b.data: return false
-  else: return true
 
 template get_data_ptr[B, T](t: Tensor[B, T]): ptr T = unsafeAddr(t.data[0])
