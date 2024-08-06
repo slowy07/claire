@@ -18,12 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math, typetraits
+import sequtils, strutils, algorithm, nimblas, math, typetraits, macros
 include src/claire/utils/functional, 
         src/claire/utils/nested_containers,
         src/claire/utils/pointers_arithmetic,
         src/claire/data_struc, 
         src/claire/accessor,
+        src/claire/accessors_slicer,
         src/claire/display,
         src/claire/display,
         src/claure/init,

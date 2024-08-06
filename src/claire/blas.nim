@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc getLayout(t: Tensor): OrderType {.inline, noSideEffect.} =
+proc getLayout(t: Tensor): OrderType {.inline, noSideEffect, used.} =
   if is_C_contiguous(t): return OrderType.rowMajor
   elif is_F_contiguous(t): return OrderType.colMajor
   else: raise newException(ValueError, "operation no support for this matrix, it has non-contiguous layouts")

@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): int = 
+template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): int {.used.} = 
     when compileOption("boundChecks"):
         if idx.len != t.rank:
           raise newException(IndexError, "number of arguments: " & $(idx.len) & ", is defferent from tensor rank: " & $(t.rank))
@@ -27,14 +27,14 @@ template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): in
       real_idx += i * j
     real_idx
 
-proc `[]`*[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): T {.noSideEffect.} =
+proc atIndex*[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): T {.noSideEffect.} =
   return t.data[t.getIndex(idx)]
 
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B, T], idx: varargs[int], val: T) {.noSideEffect.} =
   t.data[t.getIndex(idx)] = val
 
 type
-  IterKind = enum Values, Coord, MemOffset, ValCoord, ValMemOffset
+  IterKind = enum Values, MemOffset, ValCoord, ValMemOffset # Coord
 
 template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
   var coord = newSeq[int](t.rank)
@@ -43,7 +43,7 @@ template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
   
   var iter_pos = t.offset
 
-  for i in 0..<t.data.len:
+  for i in 0..<t.shape.product:
     when strider == IterKind.Values: yield t.data[iter_pos]
     elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)
     elif strider == IterKind.MemOffset: yield iter_pos
