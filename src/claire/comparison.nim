@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc `==`*[B,T](a, b: Tensor[B, T]): bool {.noSideEffect, inline.} =
+proc `==`*[B,T](a, b: Tensor[B, T]): bool {.noSideEffect.} =
   if a.shape != b.shape: return false
-  result = true
   for ai, bi in zip(a, b):
-    result = result and ai == bi
+    if ai != bi: return false
+  return true

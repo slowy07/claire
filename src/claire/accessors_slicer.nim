@@ -107,6 +107,8 @@ macro desugar(args: untyped): typed =
     let nnk0_inf_dotdot_all = nnk0_inf_dotdot or nnk0_inf_dotdot_alt
     let nnk0_inf_bar_all = if nnk.kind == nnkInfix: nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-") else: false
     let nnk0_pre_dotdot_all =  if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^") else: false
+    let nnk0_pre_hat_all = if nnk.kind == nnkPrefix: nnk[0] == ident("^")
+                           else: false
     let nnk1_joker = if nnk.kind == nnkInfix: nnk[1] == ident("_") else: false
     let nnk10_hat = if nnk.kind == nnkInfix:
                       if nnk[1].kind == nnkPrefix: nnk[1][0] == ident("^")
@@ -160,6 +162,8 @@ macro desugar(args: untyped): typed =
       r.add(infix(newIntLitNode(0), $[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
     elif nnk0_pre_dotdot_all:
       r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
+    elif nnk0_pre_hat_all:
+      r.add(prefix(infix(nnk[1], "..^", infix(nnk[1], "|", newIntLitNode(1))), "^"))
     else:
       r.add(nnk)
     
