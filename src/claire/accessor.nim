@@ -18,14 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.} =
+  if idx.len != t.rank:
+    raise newException(IndexError, "number of arguments: " & $(idex.len) & ", is different from tensor rank: " & $(t.rank))
+
+
 template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): int {.used.} = 
     when compileOption("boundChecks"):
-        if idx.len != t.rank:
-          raise newException(IndexError, "number of arguments: " & $(idx.len) & ", is defferent from tensor rank: " & $(t.rank))
+      t.check_index(idx)
     var real_idx = t.offset
     for i, j in zip(t.strides, idx):
-      real_idx += i * j
-    real_idx
+        real_idx += i * j
+      return real_idx
 
 proc atIndex*[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): T {.noSideEffect.} =
   return t.data[t.getIndex(idx)]
@@ -58,16 +62,16 @@ template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
         coord[k] = 0
         iter_pos -= backstrides[k]
 
-iterator items*[B, T](t: Tensor[B,T]): T {.inline, noSideEffect.} =
+iterator items*[B, T](t: Tensor[B,T]): T {.noSideEffect.} =
   t.strided_iteration(IterKind.Values)
 
-iterator pairs*[B, T](t: Tensor[B, T]): (T, seq[int]) {.inline, noSideEffect.} =
+iterator pairs*[B, T](t: Tensor[B, T]): (T, seq[int]) {.noSideEffect.} =
   t.strided_iteration(IterKind.ValCoord)
 
-proc values[B, T](t: Tensor[B, T]): auto {.inline, noSideEffect.} =
+proc values[B, T](t: Tensor[B, T]): auto {.noSideEffect.} =
   return iterator(): T = t.strided_iteration(IterKind.Values)
 
-iterator zip[B1, T1, B2, T2](t1: Tensor[B1, T1], t2: Tensor[B2, T2]): (T1, T2) {.inline, noSideEffect.} =
+iterator zip[B1, T1, B2, T2](t1: Tensor[B1, T1], t2: Tensor[B2, T2]): (T1, T2) {.noSideEffect.} =
   let it1 = t1.values
   let it2 = t2.values
   while true:

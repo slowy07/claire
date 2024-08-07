@@ -28,19 +28,9 @@ type Step* = object
   b: int
   step: int
 
-template check_steps(a, b, step: int) =
+proc check_steps(a, b, step: int) {.noSideEffect.} =
   if ((b - a) * step < 0):
     raise newException(IndexError, "your slice start: " & $(a) & ", and stop: " & $(b) & ", or your step: " & $(step) & """, are no correct. if your step is positive start must be inferior to stop and iversely if your step is negative start must be superior to stop""")
-
-proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.} =
-  return SteppedSlice(a: s.a, b: s.b, step: step)
-
-proc `|+`*(b, step: int): Step {.noSideEffect, inline.} =
-  return Step(b: b, step: step)
-
-proct `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.} =
-  result = ss
-  result.step = step
 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   return SteppedSlice(a: s.a, b: s.b, step: step)
@@ -51,6 +41,15 @@ proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
 proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result = ss
   result.step = step
+
+proc `|+`*(s: Slice[int], step: int): SteppedSlice{.noSideEffect, inline.} =
+  return `|`(s, step)
+
+proc `|+`*(b, step: int): Step {.noSideEffect, inline.} =
+  return `|`(b, step)
+
+proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.} =
+  return `|`(ss, step)
 
 proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   return SteppedSlice(a: s.a, b: s.b, step: -step)
@@ -70,6 +69,12 @@ proc `..|`*(s: int): SteppedSlice {.noSideEffect, inline.} =
 
 proc `..|`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: 1, step: s, b_from_end: true)
+
+proc `..|+`*(s: int): SteppedSlice {.noSideEffect, inline.} =
+  return `..|`(s)
+
+proc `..|+`*(a, s: int): SteppedSlice {.noSideEffect, inline.} =
+  return `..|`(a, s)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: <s.b, step: s.step)

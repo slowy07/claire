@@ -43,14 +43,14 @@ template strides*(t: Tensor): seq[int] = t.strides
 template offset*(t: Tensor): int = t.offset
 template rank*(t: Tensor): int = t.shape.len
 
-proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect, inline.} =
+proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect.} =
   return (shape & 1)[1..shape.len].scanr(a * b)
 
-proc is_C_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
+proc is_C_contiguous(t: Tensor): bool {.noSideEffect.} =
   result = t.strides == t.shape.shape_to_strides
   result = result and t.strides[t.strides.high] == 1
 
-proc is_F_contiguous(t: Tensor): bool {.noSideEffect, inline.} =
+proc is_F_contiguous(t: Tensor): bool {.noSideEffect.} =
   result = t.strides.reversed == t.shape.reversed.shape_to_strides
   result = result and t.strides[0] == 1
 

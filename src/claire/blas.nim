@@ -18,17 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc getLayout(t: Tensor): OrderType {.inline, noSideEffect, used.} =
+proc getLayout(t: Tensor): OrderType {.noSideEffect, used.} =
   if is_C_contiguous(t): return OrderType.rowMajor
   elif is_F_contiguous(t): return OrderType.colMajor
   else: raise newException(ValueError, "operation no support for this matrix, it has non-contiguous layouts")
 
-proc isTransposeNeeded(t: Tensor): TransposeType {.inline, noSideEffect.} =
+proc isTransposeNeeded(t: Tensor): TransposeType {.noSideEffect.} =
   if is_C_contiguous(t): return TransposeType.noTranspose
   elif is_F_contiguous(t): return TransposeType.tranpose
   else: raise newException(ValueError, "operator not support for this matrix, it has non-contiguous layouts")
 
-template check_matmat(a, b: Tensor) =
+proc check_matmat(a, b: Tensor) {.noSideEffect.} =
   let colA = a.shape[1]
   let rowB = a.shape[0]
 
@@ -39,7 +39,7 @@ template check_matmat(a, b: Tensor) =
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the matrices has a non-0 offset")
 
-template check_matvec(a, b: Tensor) =
+proc check_matvec(a, b: Tensor) {.noSideEffect.} =
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
@@ -48,13 +48,13 @@ template check_matvec(a, b: Tensor) =
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "matrice and/or vector have a non-0 offset")
 
-template check_dot_prod(a, b: Tensor) =
+proc check_dot_prod(a, b: Tensor) {.noSideEffect.} =
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "dot product is only supported for vector (tensor of rank 1)")
   if a.shape != b.shape: raise newException(ValueError, "vector should be the same length")
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the vector has a non-0 offset")
 
-template check_add(a, b: Tensor) =
+proc check_add(a, b: Tensor) {.noSideEffect.} =
   if a.strides != b.strides:
     raise newException(ValueError, "both tensor should have the exact same shape adn strides")
   if a.offset != 0 or b.offset != 0:

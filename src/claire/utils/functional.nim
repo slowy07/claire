@@ -31,10 +31,13 @@ template scanr[T](s: seq[T], operation: untyped): untyped =
         result[i-1] = operation
     result
 
-iterator zip[T1, T2](a: openarray[T1], b: openarray): (T1, T2) {.inline.} =
+iterator zip[T1, T2](a: openarray[T1], b: openarray): (T1, T2) {.noSideEffect.} =
     let len = min(a.len, b.len)
     for i in 0..<len:
         yield (a[i], b[i])
+
+template product[T: SomeNumber](s: openarray[T]): T =
+  s.foldl(a * b)
 
 iterator zipWith(T1, T2, T3)(f: proc(u: T1, v: T2): T3, a: openarray[T1], b:openarray[T2]): seq[T3] {.inline.} =
     for i in zip(a, b):
@@ -45,7 +48,5 @@ proc zipWith[T1, T2, T3](f: proc(u: T1, v: T2): T3, a: openarray[T1], b: openarr
   newSeq(result, m)
   for i in 0..<m: result[i] = f(a[i], b[i])
 
-template product[T: SomeNumber](s: openarray[T]): T = s.foldl(a*b)
-
-template concatMap[T](s: seq[T], f: proc(ss: T): string): string =
-  s.foldl(a & f(b), "")
+proc concatMap[T](s: seq[T], f: proc(ss: T): string): string {.noSideEffect.} =
+  return s.foldl(a & f(b), "")
