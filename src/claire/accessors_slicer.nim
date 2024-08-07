@@ -64,18 +64,6 @@ proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
 proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: s.b, step: s.step)
 
-proc `..|`*(s: int): SteppedSlice {.noSideEffect, inline.} =
-  return SteppedSlice(a: 0, b: 1, step: s, b_from_end: true)
-
-proc `..|`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
-  return SteppedSlice(a: a, b: 1, step: s, b_from_end: true)
-
-proc `..|+`*(s: int): SteppedSlice {.noSideEffect, inline.} =
-  return `..|`(s)
-
-proc `..|+`*(a, s: int): SteppedSlice {.noSideEffect, inline.} =
-  return `..|`(a, s)
-
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: <s.b, step: s.step)
 
@@ -107,68 +95,78 @@ macro desugar(args: untyped): typed =
 
   for nnk in childern(args):
     let nnk_joker = nnk == ident("_")
-    let nnk0_inf_dotdot = if nnk.kind == nnkInfix: nnk[0] == ident("..") else: false
-    let nnk0_inf_dotdot_alt = if nnk.kind == nnkInfix: nnk[0] == ident("..<") or nnk[0] == ident("..^") else: false
-    let nnk0_inf_dotdot_all = nnk0_inf_dotdot or nnk0_inf_dotdot_alt
-    let nnk0_inf_bar_all = if nnk.kind == nnkInfix: nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-") else: false
-    let nnk0_pre_dotdot_all =  if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^") else: false
-    let nnk0_pre_hat_all = if nnk.kind == nnkPrefix: nnk[0] == ident("^")
-                           else: false
-    let nnk1_joker = if nnk.kind == nnkInfix: nnk[1] == ident("_") else: false
-    let nnk10_hat = if nnk.kind == nnkInfix:
-                      if nnk[1].kind == nnkPrefix: nnk[1][0] == ident("^")
-                      else: false
-                    else: false
-    let nnk10_dotdot_pre_alt = if nnk.kind == nnkInfix:
-                                  if nnk[1].kind == nnkPrefix:
-                                    nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<")
-                                  else: false
-                              else: false
-    let nnk2_joker = if nnk.kind == nnkInfix: nnk[2] == ident("_") else: false
-    let nnk20_bar_pos = if nnk.kind == nnkInfix:
-                          if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|") or nnk[2][0] == ident("|+")
-                          else: false
-                        else: false
 
-    let nnk20_bar_min = if nnk.kind == nnkInfix:
-                          if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|-")
-                          else: false
-                        else: false
+    let nnk0_inf_dotdot = (
+      nnk.kind == nnkInfix and nnk[0] == ident("..")
+    )
+    let nnk0_inf_dotdot_alt = (
+      nnk.kind == nnkInfix and (
+        nnk[0] == ident("..<") or nnk[0] == ident("..^")
+      )
+    )
+
+    let nnk_inf_dotdot_all = (
+      nnk0_inf_dotdot or nnk0_inf_dotdot_alt
+    )
+
+    let nnk0_pre_hat = (
+      nnk.kind == nnkPrefix and nnk[0] == ident("^")
+    )
+
+    let nnk1_joker = (
+      nnk.kind == nnkInfix and nnk[1] == ident("_")
+    )
+
+    let nnk10_hat = (
+      nnk.kind == nnkInfix and nnk[1].kind == nnkPrefix and nnk[1][0] == ident("^")
+    )
+
+    let nnk2_joker = (
+      nnk.kind == nnkInfix and nnk[2] == ident("_")
+    )
+
+    let nnk20_bar_pos = (
+      nnk.kind == nnkInfix and nnk[2].kind == nnkInfix and (
+        nnk[2][0] == ident("|") or nnk[2][0] == ident("|+")
+      )
+    )
+
+    let nnk20_bar_min = (
+      nnk.kind == nnkInfix and nnk[2].kind == nnkInfix and nnk[2][0] == ident("|-")
+    )
 
     let nnk20_bar_all = nnk20_bar_pos or nnk20_bar_min
-    let nnk21_joker = if nnk.kind == nnkInfix:
-                        if nnk[2].kind == nnkInfix: nnk[2][1] == ident("_")
-                        else: false
-                      else: false
+    
+    let nnk21_joker = (
+      nnk.kind == nnkInfix and nnk[2].kind == nnkInfix and nnk[2][1] == ident("_")
+    )
 
     if nnk_joker:
       r.add(ident("span"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
       r.add(ident("span"))
-    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_min and nnk21_joker:
-      r.add(prefix(nnk[2][2], "..|-"))
+    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_all and nnk21_joker:
+      r.add(infix(newIntLitNode(0), "..^", infix(newIntLitNode(1), $nnk[2][0], nnk[2][2])))
     elif nnk0_inf_dotdot_all and nnk1_joker and nnk20_bar_all:
       r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2][1], $nnk[2][0], nnk[2][2])))
     elif nnk0_inf_dotdot_all and nnk1_joker:
       r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
     elif nnk0_inf_dotdot and nnk2_joker:
-      r.add(infix(nnk[1], "..|", newIntLitNode(1)))
+      r.add(infix(nnk[1], "..^", infix(newIntLitNode(1), "|", newIntLitNode(1))))
     elif nnk0_inf_dotdot and nnk20_bar_pos and nnk21_joker:
       r.add(infix(nnk[1], "..|", nnk[2][2]))
     elif nnk0_inf_dotdot and nnk20_bar_min and nnk21_joker:
-      raise newException(IndexError, "please use explicit end of range " & "instead of `_` when the steps are negative")
+      raise newException(IndexError, "please use explicit end of range instead of `_` when the stape are negative" )
     elif nnk0_inf_dotdot_all and nnk10_hat and nnk20_bar_all:
       r.add(prefix(infix(nnk[1][1], $nnk[0], nnk[2]), "^"))
+    elif nnk0_inf_dotdot_all and nnk10_hat:
+      r.add(prefix(infix(nnk[1][1], $nnk[0], infix(nnk[2],"|",newIntLitNode(1))), "^"))
     elif nnk0_inf_dotdot_all and nnk20_bar_all:
       r.add(nnk)
     elif nnk0_inf_dotdot_all:
       r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
-    elif nnk0_inf_bar_all and nnk10_dotdot_pre_alt:
-      r.add(infix(newIntLitNode(0), $[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
-    elif nnk0_pre_dotdot_all:
-      r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
-    elif nnk0_pre_hat_all:
-      r.add(prefix(infix(nnk[1], "..^", infix(nnk[1], "|", newIntLitNode(1))), "^"))
+    elif nnk0_pre_hat:
+      r.add(prefix(infix(nnk[1], "..^", infix(nnk[1],"|",newIntLitNode(1))), "^"))
     else:
       r.add(nnk)
     

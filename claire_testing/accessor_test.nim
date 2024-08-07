@@ -23,6 +23,10 @@ suite "accessing, testing tensor value":
       var b = newTensor(@[3, 4], int, Backend.Cpu)
       expect(IndexError):
         b[3, 4] = 999
+      expect(IndexError):
+        discard b[-1, 0]
+      expect(IndexError):
+        discard b[0, -2]
 
     test "iterator":
       const
