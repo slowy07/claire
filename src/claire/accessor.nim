@@ -34,7 +34,7 @@ template getIndex[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): in
 proc atIndex*[B: static[Backend], T](t: Tensor[B, T], idx: varargs[int]): T {.noSideEffect.} =
   return t.data[t.getIndex(idx)]
 
-proc `[]=`*[B: static[Backend], T](t: var Tensor[B, T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc `atIndexMut`*[B: static[Backend], T](t: var Tensor[B, T], idx: varargs[int], val: T) {.noSideEffect.} =
   t.data[t.getIndex(idx)] = val
 
 type
@@ -65,18 +65,14 @@ template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
 iterator items*[B, T](t: Tensor[B,T]): T {.noSideEffect.} =
   t.strided_iteration(IterKind.Values)
 
+proc values*[B, T](t: Tensor{[B, T]): auto {.noSideEffect.} =
+  return iterator(): T = t.strided_iteration(IterKind.Values)
+
 iterator pairs*[B, T](t: Tensor[B, T]): (T, seq[int]) {.noSideEffect.} =
   t.strided_iteration(IterKind.ValCoord)
 
-proc values[B, T](t: Tensor[B, T]): auto {.noSideEffect.} =
-  return iterator(): T = t.strided_iteration(IterKind.Values)
+iterator real_indices(t: Tensr): int {.noSideEffect.} =
+  t.strided_iteration(IterKind.MemOffset)
 
-iterator zip[B1, T1, B2, T2](t1: Tensor[B1, T1], t2: Tensor[B2, T2]): (T1, T2) {.noSideEffect.} =
-  let it1 = t1.values
-  let it2 = t2.values
-  while true:
-    let val1 = it1()
-    let val2 = it2()
-    if finised(it1) or finised(it2):
-      break
-    yield (val1, val2)
+proc real_indices(t: Tensor): auto {.noSideEffect.} =
+  return iterator(): int = t.strided_iteration(IterKind.MemOffset)

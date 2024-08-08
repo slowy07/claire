@@ -18,18 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math, typetraits, macros
-include src/claire/utils/functional, 
-        src/claire/utils/nested_containers,
-        src/claire/utils/pointers_arithmetic,
-        src/claire/utils/ast_utils,
-        src/claire/data_struc, 
-        src/claire/accessor,
-        src/claire/accessors_slicer,
-        sec/claire/comparison
-        src/claire/display,
-        src/claire/display,
-        src/claure/init,
-        src/claire/ufunc,
-        src/claire/shapeshifting,
-        src/claire/blas
+proc hasType(x: NimNode, t: static[string]): bool {.compileTime.} =
+  sameType(x, bindSym(t))
+
+proc isInt(x: NimNode): bool {.compileTime.} =
+  hasType(x, "int")
+
+proc isAllInt(slice_args: NimNode): bool {.compileTime.} =
+  result = true
+  for child in slice_args:
+    result = result and isInt(child)
+
+proc pop(tree: var NimNode): NimNode {.compileTime.} =
+  result = tree[tree.len - 1]
+  tree.del(tree.len-1)

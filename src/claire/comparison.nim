@@ -20,6 +20,6 @@
 
 proc `==`*[B,T](a, b: Tensor[B, T]): bool {.noSideEffect.} =
   if a.shape != b.shape: return false
-  for ai, bi in zip(a, b):
+  for ai, bi in zip(a.values, b.values):
     if ai != bi: return false
   return true

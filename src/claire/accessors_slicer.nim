@@ -30,9 +30,17 @@ type Step* = object
 
 proc check_steps(a, b, step: int) {.noSideEffect.} =
   if ((b - a) * step < 0):
-    raise newException(IndexError, "your slice start: " & $(a) & ", and stop: " & $(b) & ", or your step: " & $(step) & """, are no correct. if your step is positive start must be inferior to stop and iversely if your step is negative start must be superior to stop""")
+    raise newException(IndexError, "your slice start: " & $a & ", and stop: " & $b & ", or your step: " & $step & """, are no correct. if your step is positive start must be inferior to stop and iversely if your step is negative start must be superior to stop""")
 
-proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc check_length[B, T](t: Tensor[B, T], oa: openarray[T]) {.noSideEffect.} =
+  if t.len != oa.len:
+    raise newException(IndexError, "your oppen array length: " & $oa.len & ", is not compatible with a tensor of shape " & $t.shape.join("x") & " (length: " & $t.len &" )") 
+
+proc check_shape[B1, B2, T](t: Tensor[B1, T], t2: Tensr[B2, T]) {.noSideEffect.} =
+  if t.shape != t2.shape:
+    raise newException(IndexError, "your tensor do not have the same shape: " & $t.shape.join("x") & " and " & $t2.shape.join("x"))
+
+proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: s.a, b: s.b, step: step)
 
 proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
@@ -78,17 +86,6 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
 
 const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
-
-proc slicer*[B, T](t: Tensor[B, T], slice: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect} =
-  result = t
-  for i, slice in slices:
-    let a = if slice.a_from_end: result.shape[i] - slice.a else: slice.a
-    let b = if slice.b_from_end: result.shape[i] - slice.b else: slice.b
-    
-    when compileOption("boundChecks"): check_steps(a, b, slice.step)
-    result.offset += a * result.strides[i]
-    result.strides[i] *= slice.step
-    result.shape[i] = abs((b - a) div slice.step) + 1
 
 macro desugar(args: untyped): typed =
   var r = newNimNode(nnkArglist)
@@ -172,16 +169,18 @@ macro desugar(args: untyped): typed =
     
   return r
 
-proc hasType(x: NimNode, t: stat[string]): bool {.compileTime.} =
-  sameType(x, bindSym(t))
+prooc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.} =
+  result = t
+  for i, slice in slices:
+    let a = if slice.a_from_end: result.shape[i] - slice.a
+            else: slice.a
+    let b = if slice.b_from_end: result.shape[i] - slice.b
+            else: slice.b
 
-proc isInt(x: NimNode): bool {.compileTime.} =
-  hasType(x, "int")
-
-proc isAllInt(slice_args: NimNode): bool {.compileTime.} =
-  result = true
-  for child in slice_args:
-    result = result and isInt(child)
+    when compileOption("boundChecks"): check_steps(a, b, slice.step)
+    result.offset += a * result.strides[i]
+    result.strides[i] *= slice.step
+    result.shape[i] = abs((b-a) div slice.step) + 1
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   if isAllInt(args):
@@ -200,3 +199,43 @@ macro `[]`*[B, T](t: Tensor[B, T], args: varargs[untyped]): untyped =
   let new_args = getAST(desugar(args))
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
+
+proc sliceMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.} =
+  let sliced = t.slicer(slices)
+  for real_idx in sliced.real_indices:
+    t.data[real_idx] = val
+
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray[T]) =
+  let sliced = t.slicer(slices)
+  when compileOption("boundChecks"): check_length(sliced, oa)
+
+  for real_idx< val in zup(sliced.real_indices, oa):
+    t.data[real_idx] = val
+
+proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.} =
+  let sliced = t.slicer(slices)
+  when compileOption("boundChecks"): check_shape(sliced, t2)
+  for real_idx, val in zip(sliced.real_indices, t2.values):
+    t.data[real_idx] = val
+
+macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): untyped =
+  if isAllInt(args):
+    result = newCall("atIndexMut", t)
+    for slice in args:
+      result.add(slice)
+    result.add(val)
+  else:
+    result = newCall("slicerMut", t)
+    for slice in args:
+      if isInt(slice):
+        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+      else:
+        result.add(slice)
+
+macro `[]=`*[B, T](t: var Tensor[B, T], args: varargs[untyped]): untyped =
+  var tmp = args
+  let var = tmp.pop
+  let new_args = getAST(desugar(tmp))
+
+  result = quote do:
+    inner_typed_dispatch_mut(`t`, `new_args`, `val`)
