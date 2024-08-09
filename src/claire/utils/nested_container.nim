@@ -22,6 +22,14 @@ proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideE
   result = parent_shape & s.len
   when (T is seq|array):
     result = shape(s[0], result)
+
+iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.} =
+  for item in s:
+    when item is array|seq:
+      for subitem in flatIter(item):
+        yield subitem
+    else:
+      yield item
   
 proc flatten[T](a: seq[T]): seq[T] {.noSideEffect.} = a
 proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect.} = a.concat.flatten

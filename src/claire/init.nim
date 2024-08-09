@@ -18,15 +18,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.} =
+  if (shape.product != len):
+    raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
   let strides = shape_to_strides(shape)
   result.shape = shape
   result.strides = strides
   result.data = newSeq[T](shape.product)
-  result.offset = addr result.data[0]
+  result.offset = 0
 
-proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.}=
+proc toTensor*(s: openarray, B: static[Backend]): auto {.noSideEffect.} =
+  let shape = s.shape
+  let data = toSeq(flatIter(s))
+  when compileOption("boundChecks"): check_nested_elements(shape, data.len)
+  result = newTensor(shape, type(data[0]), B)
+  result.data = data
+
+proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect, deprecated.} =
   let shape = s.shape
   let flat = s.flatten
 
