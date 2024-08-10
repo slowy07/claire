@@ -17,4 +17,4 @@ suite "testing tensor compare":
         row = newSeq[int]()
         for j, bb in b:
           vandermonde[i].add(aa ^ bb)
-    let t_van = fromSeq(vandermonde, int, Backend.Cpu)
+    let t_van = vandermonde.toTensor(Cpu)

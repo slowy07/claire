@@ -16,5 +16,5 @@ suite "Display tensor":
       vandermode.add(row)
       for j, bb in b:
         vandermode[i].add(aa^bb)
-    let t_van = fromSeq(vandermode, int, Backend.Cpu)
+    let t_van = vandermode.toTensor(Cpu)
     when compiles(echo t_van): check: true
