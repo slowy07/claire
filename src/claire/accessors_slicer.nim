@@ -32,13 +32,9 @@ proc check_steps(a, b, step: int) {.noSideEffect.} =
   if ((b - a) * step < 0):
     raise newException(IndexError, "your slice start: " & $a & ", and stop: " & $b & ", or your step: " & $step & """, are no correct. if your step is positive start must be inferior to stop and iversely if your step is negative start must be superior to stop""")
 
-proc check_length[B, T](t: Tensor[B, T], oa: openarray[T]) {.noSideEffect.} =
-  if t.len != oa.len:
-    raise newException(IndexError, "your oppen array length: " & $oa.len & ", is not compatible with a tensor of shape " & $t.shape.join("x") & " (length: " & $t.len &" )") 
-
-proc check_shape[B1, B2, T](t: Tensor[B1, T], t2: Tensr[B2, T]) {.noSideEffect.} =
-  if t.shape != t2.shape:
-    raise newException(IndexError, "your tensor do not have the same shape: " & $t.shape.join("x") & " and " & $t2.shape.join("x"))
+proc check_shape(a, b: Tensor | openarray) {.noSideEffect.} =
+  if a.shape != b.shape:
+    raise newException(IndexError, "your tensor or openarray do not have the same shape: " & $a.shape.join("x") & " and " & $b.shape.join("x"))
 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: s.a, b: s.b, step: step)
@@ -200,17 +196,19 @@ macro `[]`*[B, T](t: Tensor[B, T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
-proc sliceMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.} =
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.} =
   let sliced = t.slicer(slices)
   for real_idx in sliced.real_indices:
     t.data[real_idx] = val
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray[T]) =
   let sliced = t.slicer(slices)
-  when compileOption("boundChecks"): check_length(sliced, oa)
+  when compileOption("boundChecks"):
+    check_shape(sliced, oa)
 
-  for real_idx< val in zup(sliced.real_indices, oa):
-    t.data[real_idx] = val
+  let data = toSeq(flatIter(oa))
+  when compileOption("boundChecks"):
+    check_nested_elements(oa.shape, data.len)
 
 proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.} =
   let sliced = t.slicer(slices)

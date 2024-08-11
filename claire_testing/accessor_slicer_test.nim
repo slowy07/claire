@@ -14,10 +14,13 @@ suite "testing indexing and slice syntax":
 
   for i, aa in a:
     row = newSeq[int]()
+    vandermonde.add(row)
+    for j, bb in b:
+      vandermonde[i].add(aa^bb)
 
-  let t_van = fromSeq(vandermonde, int, Backend.Cpu)
+  let t_van = vandermonde.toTensor(Cpu)
 
-  test "basic idnexing":
+  test "basic indexing":
     check: t_van[2, 3] == 81
 
   test "basic indexing [1+1, 2*2*1]":
@@ -37,13 +40,14 @@ suite "slice mutation":
     row: seq[int]
 
   vandermonde = newSeq[seq[int]]()
-
+  
   for i, aa in a:
     row = newSeq[int]()
     vandermonde.add(row)
     for j, bb in b:
       vandermonde[i].add(aa^bb)
-  let t_van_immut = fromSeq(vandermonde, int, Backend.Cpu)
+
+  let t_van_immut = vandermonde.toTensor(Cpu)
 
   test "immutable - let variable cannot be changed":
     when compiles(t_van_immut[1..2, 3..4] = 99):
@@ -60,7 +64,7 @@ suite "slice mutation":
                 @[3,  9,  27, 999,  999],
                 @[4, 16,  64, 256, 1024],
                 @[5, 25, 125, 625, 3125]]
-    let t_test = fromSeq(test, int, Backend.Cpu)
+    let t_test = test.toTensor(Cpu)
     t_van[1..2, 3..4] = 999
     check: t_van == t_test
 
@@ -72,7 +76,7 @@ suite "slice mutation":
                 @[  4,   16,  64, 256, 1024],
                 @[  5,   25, 125, 625, 3125]]
 
-    let t_test = fromSeq(test, int, Backend.Cpu)
+    let t_test = test.toTensor(Cpu)
     t_van[0..1,0..1] = [111, 222, 333, 444]
     check: t_van == t_test
 
