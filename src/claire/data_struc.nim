@@ -22,9 +22,9 @@ type
     Backend* = enum
         # backend update
         Cpu
-        Cuda
-        OpenCL
-        Magma
+        # Cuda
+        # OpenCL
+        # Magma
     
     # StrideKind = enum
     # DataKind = enum

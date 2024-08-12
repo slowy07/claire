@@ -34,8 +34,6 @@ proc check_matmat(a, b: Tensor) {.noSideEffect.} =
 
   if colA != rowB:
       raise newException(IndexError, "number of column in the first matrix: " & $(colA) & ", must be the same as the number of rows in the second matrix: " & $(rowB))
-  if a.strides[1] != 1 or b.strides[1] != 1:
-    raise newException(ValueError, "only Row-Major matrices are supported")
   if a.offset != 0 or b.offset != 0:
     raise newException(IndexError, "one of the matrices has a non-0 offset")
 

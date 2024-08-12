@@ -57,14 +57,5 @@ iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideE
 template product[T: SomeNumber](s: openarray[T]): T =
   s.foldl(a * b)
 
-iterator zipWith(T1, T2, T3)(f: proc(u: T1, v: T2): T3, a: openarray[T1], b:openarray[T2]): seq[T3] {.inline.} =
-    for i in zip(a, b):
-        yield f(a, b)
-
-proc zipWith[T1, T2, T3](f: proc(u: T1, v: T2): T3, a: openarray[T1], b: openarray[T2]): seq[T3] {.inline, noSideEffect.} =
-  let m = min(a.len, b.len)
-  newSeq(result, m)
-  for i in 0..<m: result[i] = f(a[i], b[i])
-
-proc concatMap[T](s: seq[T], f: proc(ss: T): string): string {.noSideEffect.} =
+template concatMap[T](s: seq[T], f: proc(ss: T): string): string {.noSideEffect.} =
   return s.foldl(a & f(b), "")
