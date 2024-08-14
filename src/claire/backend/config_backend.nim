@@ -18,17 +18,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import sequtils, strutils, algorithm, nimblas, math, typetraits, macros, random
-include src/claire/utils/functional, 
-        src/claire/utils/nested_containers,
-        src/claire/utils/ast_utils,
-        src/claire/backend/config_backend,
-        src/claire/data_struc,
-        src/claire/init,
-        src/claire/accessors,
-        src/claire/accessors_slicer,
-        src/claire/comparison,
-        src/claire/display,
-        src/claire/ufunc,
-        src/claire/shapeshifting,
-        src/claire/blas,
+when defined(blis):
+  static: echo "USING BLIS"

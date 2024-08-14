@@ -38,7 +38,7 @@ proc `atIndexMut`*[B: static[Backend], T](t: var Tensor[B, T], idx: varargs[int]
   t.data[t.getIndex(idx)] = val
 
 type
-  IterKind = enum Values, MemOffset, ValCoord, ValMemOffset # Coord
+  IterKind = enum Values, MemOffset, ValCoord, ValMemOffset
 
 template strided_iteration[B, T](t: Tensor[B, T], strider: IterKind): untyped =
   var coord = newSeq[int](t.rank)
@@ -76,3 +76,13 @@ iterator real_indices(t: Tensr): int {.noSideEffect.} =
 
 proc real_indices(t: Tensor): auto {.noSideEffect.} =
   return iterator(): int = t.strided_iteration(IterKind.MemOffset)
+
+iterator axis*[B, T](t: Tensor[B, T], axis: int): Tensor[B, T] {.noSideEffect.} =
+  var out_t = t
+  let axis_len = t.shape[axis]
+  let axis_stride = t.stride[axis]
+  out_t.shape[axis] = 1
+  
+  for _ in 0..< axis_len:
+    yield out_t
+    out_t.offset += axis_stride

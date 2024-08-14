@@ -54,6 +54,18 @@ iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideE
       break
     yield (val1, b[i])
 
+iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int, T1, T2) {.noSideEffect.} =
+  let it1 = inp1
+  let it2 = inp2
+  var i = 0
+  while true:
+    let val1 = it1()
+    let val2 = it2()
+    if finished(it1) or finished(it2):
+      break
+    yield (i, val1, val2)
+    inc i
+
 template product[T: SomeNumber](s: openarray[T]): T =
   s.foldl(a * b)
 

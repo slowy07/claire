@@ -103,6 +103,39 @@ proc `/`*[T: SomeNumber](t: Tensor[Backend.Cpu,T], a: T): Tensor[Backend.Cpu,T] 
     proc f(x: T): T = x / a
     return t.fmap(f)
 
+
+template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu, T]): auto =
+  let
+    rowA = a.shape[0]
+    colA = a.shape[1]
+    rowB = b.shape[0]
+    colB = b.shape[1]
+
+  when compileOption("boundChecks"): check_matmat(a, b)
+  result.data = newSeq[T](rowA * colB)
+  result.shape = @[rowA, colB]
+  result.strides = @[rowA, 1]
+  result.offset = 0
+
+  let
+    a_ptr = get_data_ptr(a)
+    b_ptr = get_data_ptr(b)
+    res_ptr = get_data_ptr(result)
+    alpha = 1.T
+    alpha_ptr = unsafeAddr(alpha)
+    beta = 0.T
+    beta_ptr = unsafeAddr(beta)
+
+  bli_gemm(
+    BLIS_NO_TRANSPOSE,
+    BLIS_NO_TRANSPOSE,
+    rowA, colB, rowB,
+    a_ptr, a.strides[0], a.strides[1],
+    b_ptr, a.strides[1], b.strides[1],
+    beta_ptr,
+    res_ptr, result.strides[0], 1
+  )
+
 template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu, T], a_tr, b_tr: TransposeType): auto =
   let
     rowA = a.shape[0]
@@ -127,6 +160,38 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu, T], a_tr, b_
     gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, rowB, 0, res_data, colB)
   else: raise newException(ValueError, "the transpose types: " & $a_tr & " or " & $b_tr & " is not supported")
 
+template matvec_blis[T: SomeReal](a, x, result: Tensor[Cpu, T]): auto =
+  let
+    rowA = a.shape[0]
+    colA = a.shape[1]
+    rowX = a.shape[0]
+
+  when compileOption("boundChecks"): check_matvec(a, b)
+  result.data = newSeq[T](rowA)
+  result.shape = @[rowA]
+  result.strides = @[1]
+  result.offset = 0
+
+  let
+    a_ptr = get_data_ptr(a)
+    x_ptr = get_data_ptr(x)
+    res_ptr = get_data_ptr(result)
+    alpha = 1.T
+    alpha_ptr = unsafeAddr(alpha)
+    beta = 0.T
+    bet_ptr = unsafeAddr(beta)
+
+  bli_gemv(
+    BLIS_NO_TRANSPOSE,
+    BLIS_NO_CONJUGATE,
+    rowA, rowX,
+    alpha_ptr,
+    a_ptr, a.strides[0], a.strides[1],
+    x_ptr, x.strides[0],
+    beta_ptr,
+    res_ptr, 1,
+  )
+
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu]): auto =
   let
     rowA = a.shape[0]
@@ -147,10 +212,19 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu]): auto =
   else:
     gemv(colMajor, noTranspose, rowA, rowB, 1, a_data, rowA, b_data, 1, 0, res_data, 1)
 
-template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu, T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto = 
-  if a.rank == 2 and b.rank == 2: matmat_blas(a, b, res, a_tr, b_tr)
-  elif b.rank == 2 and b.rank == 1: matvec_blas(a, b, result, a_tr)
-  else: raise newException(ValueError, "matrix or matrix vector multiplication valid only if first tensor is a matrix and second is a matrix or vector")
 
-proc `*`*[T:SomeReal](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu, T] {.noSideEffect} =
-  mul_dispatch(a, b, result, a.rank, b.rank, a.isTransposeNeeded, b.isTransposeNeeded)
+proc `*`*[T: SomeReal](a, b: Tensor[Cpu, T]): Tensor[Cpu, T] {.noSideEffect.} =
+  when defined(blis):
+    if a.rank == 2 and b.rank == 2:
+      matmat_blis(a, b, result)
+    elif a.rank == 2 and b.rank == 1:
+      matvec_blis(a, b, result)
+    else:
+      raise newException(ValueError, "matrix or matrix-vector multiplication valid only if tensor is a matrix and second is a matrix")
+  else:
+    if a.rank == 2 and b.rank == 2:
+      matmat_blas(a, b, result)
+    elif a.rank == 2 and b.rank == 1:
+      matvec_blas(a, b, result)
+    else:
+      raise newException(ValueError, "matrix or matrix vector multiplication only if first tensor is a matrix and second is a matrix r vector")

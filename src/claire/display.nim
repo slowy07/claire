@@ -35,6 +35,7 @@ proc `$`*[B,T](t: Tensor[B, T]): string {.noSideEffect.} =
   for value in t:
     indexed_data.add(($value, i))
     i += 1
+
   proc curry_bounds(tup: (string, int)): string {.noSideEffect.} = t.bounds_display(tup)
   let str_tensor = indexed_data.concatMap(curry_bounds)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\"on backend \"" & $B & "\""

@@ -30,6 +30,3 @@ iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.} =
         yield subitem
     else:
       yield item
-  
-proc flatten[T](a: seq[T]): seq[T] {.noSideEffect.} = a
-proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect.} = a.concat.flatten

@@ -23,3 +23,16 @@ proc transpose*(T: Tensor): Tensor {.noSideEffect.} =
   result.strides = t.strides.reversed
   result.offset = t.offset
   result.data = t.data
+
+proc asContiguous*[B, T](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
+  if t.isContiguous: return t
+
+  result.shape = t.shape
+  result.strides = shape_to_strides(t.shape)
+  result.offset = 0
+  result.data = newSeq[T](t.shape.product)
+
+  var i = 0
+  for val in t:
+    result.data[i] = val
+    inc i

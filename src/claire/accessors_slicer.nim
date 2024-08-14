@@ -165,7 +165,19 @@ macro desugar(args: untyped): typed =
     
   return r
 
-prooc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.} =
+template slicerT[B, T](result: Tensor[B, T], slices: varargs[SteppedSlice]): untyped =
+  for i, slice in slices:
+      let a = if slice.a_from_end: result.shape[i] - slice.a
+              else: slice.a
+      let b = if slice.b_from_end: result.shape[i] - slice.b
+              else: slice.b
+
+      when compileOption("boundChecks"): check_steps(a, b, slice.step)
+      result.offset += a * result.strides[i]
+      result.strides[i] *= slice.step
+      result.shape[i] = abs((b - a) div slice.step) + 1
+
+proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.} =
   result = t
   for i, slice in slices:
     let a = if slice.a_from_end: result.shape[i] - slice.a
@@ -177,6 +189,10 @@ prooc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T
     result.offset += a * result.strides[i]
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
+
+proc shallowSlicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.} =
+  result = shallowCopy(t)
+  slicerT(result, slices)
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   if isAllInt(args):

@@ -22,12 +22,17 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.} =
   if (shape.product != len):
     raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
 
-proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
-  let strides = shape_to_strides(shape)
-  result.shape = shape
-  result.strides = strides
-  result.data = newSeq[T](shape.product)
+template tensor[B, T](shape: openarray[int], result: Tensor[B, T]): untyped =
+  result.shape = @shape
+  result.strides = shape_to_strides(result.shape)
   result.offset = 0
+
+proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
+  tensor(shape, result)
+  result.data = newSeq[T](result.shape.product)
+
+proc emptyTensor(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B, T] {.noSideEffect, inline.} =
+  tensor(shape, result)
 
 proc toTensor*(s: openarray, B: static[Backend]): auto {.noSideEffect.} =
   let shape = s.shape
@@ -36,15 +41,33 @@ proc toTensor*(s: openarray, B: static[Backend]): auto {.noSideEffect.} =
   result = newTensor(shape, type(data[0]), B)
   result.data = data
 
-proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect, deprecated.} =
-  let shape = s.shape
-  let flat = s.flatten
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B, T] {.noSideEffect, inline.} =
+  return newTensor(shape, typ, B)
 
-  while compileOption("boundChecks"):
-      if (shape.product != flat.len):
-        raise NewException(IndexError, "each nested sequence at the same level must have the same number of elements")
-      let strides = shape_to_strides(shape)
-      result.shape = shape
-      result.strides = strides
-      result.data = flat
-      result.offset = 0
+proc zeros_like*[B: static[Backend], T: SomeNumber](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect, inline.} =
+  return zeros(t.shape, T, B)
+
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
+  tensor(shape, result)
+  result.data = newSeqWith(shape.product, 1.T)
+
+proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect, inline.} =
+  return ones(t.shape, T, B)
+
+template randomTensorT(shape: openarray[int], max_or_range: typed, seed: int): untyped =
+  result.shape = @shape
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+  
+  randomize(seed)
+  result.data = newSeqWith(result.shape.product, random(max_or_range))
+
+proc randomTensor*(shape: openarray[int], max: float, seed: int, B: static[Backend]): Tensor[B, float] =
+  randomTensorT(shape, max, seed)
+
+proc randomTensor*(shape: openarray[int], max: int, seed: int, B: static[Backend]): Tensor[B, int] =
+  randomTensorT(shape, max, seed)
+
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], seed: int, B: static[Backend]): Tensor[B, T] =
+  randomTensorT(shape, slice, seed)
+

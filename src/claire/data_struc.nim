@@ -54,4 +54,21 @@ proc is_F_contiguous(t: Tensor): bool {.noSideEffect.} =
   result = t.strides.reversed == t.shape.reversed.shape_to_strides
   result = result and t.strides[0] == 1
 
-template get_data_ptr[B, T](t: Tensor[B, T]): ptr T = unsafeAddr(t.data[0])
+proc isContiguous(t: Tensor): bool {.noSideEffect.} =
+  return t.is_C_contiguous or t.is_F_contiguous
+
+proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.} =
+  if is_C_contiguous(t):
+    return TransposeType.noTranspose
+  elif is_F_contiguous(t):
+    return TransposeType.transpose
+  else:
+    raise newException(ValueError, "operation not supported for this matrix,it has non-contiguus layout")
+
+  template get_data_ptr[B, T](t: Tensor[B, T]): ptr T = unsafeAddr(t.data[0])
+
+  proc shallowCopy*[B, T](t: Tensor[B, T]): Tensor[B, T] =
+    result.shape = t.shape
+    result.strides = t.strides
+    result.offset = t.offset
+    shallowCopy(result.data, t.data)
