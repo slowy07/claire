@@ -38,21 +38,21 @@ proc agg_inplace*[B; T: SomeNumber](accum_val: var Tensor[B, T], f: proc(x: var 
   for val in t.axis(axis):
     f(accum_val, val)
 
-proc sum*[B; T: SomeNumber](t: Tensor[B, T]): T =
+proc sum*[B; T: SomeNumber](t: Tensor[B, T]): T {.noSideEffect.} =
   result = 0.T
   for val in t:
     result += val
 
-proc sum*[B; T: SomeNumber](t: Tensor[B, T], axis: int): Tensor[B, T] =
+proc sum*[B; T: SomeNumber](t: Tensor[B, T], axis: int): Tensor[B, T] {.noSideEffect.} =
   var agg_shape = t.shape
   agg_shape[axis] = 1
   result = zeros(agg_shape, T, B)
   for t_slice in t.axis(axis):
     result += t_slice
 
-proc mean*[B; T: SomeReal](t: Tensor[B, T]): T =
+proc mean*[B; T: SomeReal](t: Tensor[B, T]): T {.noSideEffect.} =
   return t.sum / t.shape.produc.T
 
-proc mean*[B; T: SomeReal](t: Tensor[B, T], axis: int): Tensor[B, T] =
+proc mean*[B; T: SomeReal](t: Tensor[B, T], axis: int): Tensor[B, T] {.noSideEffect.} =
   let n = t.shape[axis]
   return t.sum(axis) / n.T
