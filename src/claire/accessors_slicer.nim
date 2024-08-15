@@ -213,12 +213,12 @@ macro `[]`*[B, T](t: Tensor[B, T], args: varargs[untyped]): untyped =
     inner_typed_dispatch(`t`, `new_args`)
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.} =
-  let sliced = t.slicer(slices)
+  let sliced = t.shallowSlicer(slices)
   for real_idx in sliced.real_indices:
     t.data[real_idx] = val
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray[T]) =
-  let sliced = t.slicer(slices)
+  let sliced = t.shallowSlicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 

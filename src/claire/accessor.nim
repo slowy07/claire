@@ -78,7 +78,7 @@ proc real_indices(t: Tensor): auto {.noSideEffect.} =
   return iterator(): int = t.strided_iteration(IterKind.MemOffset)
 
 iterator axis*[B, T](t: Tensor[B, T], axis: int): Tensor[B, T] {.noSideEffect.} =
-  var out_t = t
+  var out_t = shallowCopy(t)
   let axis_len = t.shape[axis]
   let axis_stride = t.stride[axis]
   out_t.shape[axis] = 1

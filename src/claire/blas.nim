@@ -67,7 +67,7 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu, T]): T {.noSideEffect.} =
   for ai, bi in zip(a.data, b.data):
     result += ai * bi
 
-proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu, T] =
+proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu, T] {.noSideEffect.} =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
   result.shape = a.shape

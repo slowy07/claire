@@ -67,7 +67,7 @@ proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.} =
 
   template get_data_ptr[B, T](t: Tensor[B, T]): ptr T = unsafeAddr(t.data[0])
 
-  proc shallowCopy*[B, T](t: Tensor[B, T]): Tensor[B, T] =
+  proc shallowCopy*[B, T](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
     result.shape = t.shape
     result.strides = t.strides
     result.offset = t.offset
