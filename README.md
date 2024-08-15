@@ -30,6 +30,10 @@ either C or fortran contiguous are needed for BLAS optimization for tensor of Ra
 
 for deep learning on image, depth representing the color channel and change the fastest, row are repersenting another image in a batch and change the slowest. hance C convention is the best and preferred in claire.
 
+## data structure consideration
+
+shape and strides have a static size that is determined at runtime. in terms of indirection, they may be best implemented as VLA (variable length array). inconvenient: two tensor cannot fit in a cache line. there is a high danger of getting caught if your slice shallow copies by default, like numpy does. would a shallowSlice procedure be preferred for safety by default but optional for performance?, note that because NIM is compiled, we may expect that the compiler recognizes circumtances when the original tensor is not reused and moves instead of copying.
+
 ## memory consendirations
 current CPU cache is 64 byte. tensor data structure at 32 bytes has an ideal size. however, every time retrieve the dimension and strides there is a pointer resolution + bounds checking for a static array. you can see data structure consideration section
 
@@ -64,6 +68,10 @@ information: https://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#ref
 _if you mis-handle reference counts you can get problem from memory-leaks to segmentation faults. the only strategy i know of to handle reference counts correctly is blood, sweat and tears_
 
 nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
+
+## coding style
+
+prefer when to use compile-time evaluation. Allow the compiler to do its work. Use `proc` without the inline tag whenever possible. using template if `proc` fails or to access an bject field. adding macro as a last option to change the AST tree or rewrite code. readiblity, maintainability, and performance are extremely important (in no particular order). when you don't require side effect or an iterator, use functional techniques like map and scanr instead of or loops.
 
 ## performance consendirations
 
