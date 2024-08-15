@@ -79,6 +79,11 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu, T] {
     result.data[i] = ai + bi
     inc i
 
+proc `+=`*[T: SomeNumber](a: var Tensor[Cpu, T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+  when compileOption("boundChecks"): check_add(a, b)
+  for a_idx, b_val in zip(a.real_indices, b.values):
+    a.data[a_idx] += b_val
+
 proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu] {.noSideEffect.} =
   when compileOption("boundChecks"): check_add(a, b)
   result.data = newSeq[T](a.data.len)
@@ -90,6 +95,12 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu, T]): Tensor[Backend.Cpu] {.no
   for ai, bi in zip(a.data, b.data):
     result.data[i] = ai - bi
     inc i
+
+proc `-=`*[T: SomeNumber](a: var Tensor[Cpu, T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+  when compileOption("boundChecks"): check_add(a, b)
+
+  for a_idx, b_val in zip(a.real_indices, b.values):
+    a.data[a_idx] -= b.val
     
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
     proc f(x: T): T = a * x

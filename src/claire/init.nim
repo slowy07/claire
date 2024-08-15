@@ -54,20 +54,19 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Bac
 proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect, inline.} =
   return ones(t.shape, T, B)
 
-template randomTensorT(shape: openarray[int], max_or_range: typed, seed: int): untyped =
+template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
   result.shape = @shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
   
-  randomize(seed)
   result.data = newSeqWith(result.shape.product, random(max_or_range))
 
-proc randomTensor*(shape: openarray[int], max: float, seed: int, B: static[Backend]): Tensor[B, float] =
-  randomTensorT(shape, max, seed)
+proc randomTensor*(shape: openarray[int], max: float, B: static[Backend]): Tensor[B, float] =
+  randomTensorT(shape, max)
 
-proc randomTensor*(shape: openarray[int], max: int, seed: int, B: static[Backend]): Tensor[B, int] =
-  randomTensorT(shape, max, seed)
+proc randomTensor*(shape: openarray[int], max: int, B: static[Backend]): Tensor[B, int] =
+  randomTensorT(shape, max)
 
-proc randomTensor*[T](shape: openarray[int], slice: Slice[T], seed: int, B: static[Backend]): Tensor[B, T] =
-  randomTensorT(shape, slice, seed)
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): Tensor[B, T] =
+  randomTensorT(shape, slice)
 
