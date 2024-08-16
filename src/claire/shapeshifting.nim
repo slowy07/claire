@@ -36,3 +36,13 @@ proc asContiguous*[B, T](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
   for val in t:
     result.data[i] = val
     inc i
+
+proc broadcast*[B, T](t: Tensor[B, T], shape: openarray[int]): Tensor[B, T] {.noSideEffect.} =
+  assert t.rank == shape.len
+  for i in 0..< result.rank:
+    if result.shape[i] == 1:
+      if shape[i] != 1:
+        result.shape[i] = shape[i]
+      result.strides[i] = 0
+    elif result.shape[i] != shape[i]:
+      raise newException(ValueError, "the broadcast size of the tensor must match existing size for non-singleton dimension")
