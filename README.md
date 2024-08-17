@@ -12,6 +12,7 @@ tensor claire currently supporting:
 ## Claire Feature
 - how to implement integer matrix multiplication and matrix-vector multiplication
     - convert to `float64`, use `BLAS`, convert back to `int`. no issue for `int32` has them all. `int64` may lose precision
+    - implement tensor comprehension macro, it may be able to leverage mitems instead of `result[i,j] = alpha * (i - j) * (i + j)`
     - implement cache matrix multiplication.
 - how to implementing non-contiguous matrix multiplication and matrix-vector multiplication
     - cache and any stride generic matrix multiplication

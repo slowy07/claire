@@ -49,15 +49,13 @@ proc zeros_like*[B: static[Backend], T: SomeNumber](t: Tensor[B, T]): Tensor[B, 
 
 proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B, T] {.noSideEffect.} =
   tensor(shape, result)
-  result.data = newSeqWith(shape.product, 1.T)
+  result.data = newSeqWith(result.shape.product, 1.T)
 
 proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect, inline.} =
   return ones(t.shape, T, B)
 
 template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
-  result.shape = @shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
+  tensor(shape, result)
   
   result.data = newSeqWith(result.shape.product, random(max_or_range))
 

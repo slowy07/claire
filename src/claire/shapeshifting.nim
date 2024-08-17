@@ -38,11 +38,35 @@ proc asContiguous*[B, T](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
     inc i
 
 proc broadcast*[B, T](t: Tensor[B, T], shape: openarray[int]): Tensor[B, T] {.noSideEffect.} =
+  result = t
   assert t.rank == shape.len
-  for i in 0..< result.rank:
+  for i in 0..<result.rank:
     if result.shape[i] == 1:
       if shape[i] != 1:
-        result.shape[i] = shape[i]
-      result.strides[i] = 0
+        resut.shape[i] = shape[i]
+        result.strides[i] = 0
     elif result.shape[i] != shape[i]:
-      raise newException(ValueError, "the broadcast size of the tensor must match existing size for non-singleton dimension")
+      raise newException(ValueError, "the broadcasted size of the tensor must match existing size for non-singleton dimension")
+
+template bc(t: Tensor, shape: openarray[int]): untyped =
+  t.broadcast(shape)
+
+proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.} =
+  if dim1 == dim2:
+    return t
+  result = t
+  swap(result.strides[dim1], result.strides[dim2])
+  swap(result.shape[dim1], result.shape[dim2])
+
+proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.} =
+  var perm = @dims
+  result = t
+  for i, p in perm:
+    if p != i and p != -1:
+      var j = i
+      while true:
+        result = result.exch_dim(j, perm[j])
+        (perm[j], j) = (-1, perm[j])
+        if perm[j] == i:
+          break
+      perm[j] = -1

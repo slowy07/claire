@@ -66,7 +66,7 @@ iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int
     yield (i, val1, val2)
     inc i
 
-template product[T: SomeNumber](s: openarray[T]): T =
+template product[T: SomeNumber](s: seq[T]): T =
   s.foldl(a * b)
 
 template concatMap[T](s: seq[T], f: proc(ss: T): string): string {.noSideEffect.} =
