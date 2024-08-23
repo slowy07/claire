@@ -18,11 +18,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+proc check_reshape(t: Tensor, new_shape: seq[int]) =
+  if t.shape.product != new_shape.product:
+      raise newException(ValueError, "total number of elements in the old and the new reshape matrix must be the same")
+
 proc transpose*(T: Tensor): Tensor {.noSideEffect.} =
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
   result.offset = t.offset
   result.data = t.data
+
+proc reshape*[B, T](t: Tensor[B, T], new_shape: varargs[int]): Tensor[B, T] {.noSideEffect.} =
+  let ns = @new_shape
+  when compileOption("boundChecks"): check_reshape(t, ns)
+
+  result.shape = ns
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+  result.data = newSeq[T](result.shape.product)
+
+  var i = 0
+  for val in t:
+    result.data[i] = val
+    inc i
 
 proc asContiguous*[B, T](t: Tensor[B, T]): Tensor[B, T] {.noSideEffect.} =
   if t.isContiguous: return t
@@ -48,7 +66,7 @@ proc broadcast*[B, T](t: Tensor[B, T], shape: openarray[int]): Tensor[B, T] {.no
     elif result.shape[i] != shape[i]:
       raise newException(ValueError, "the broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-template bc(t: Tensor, shape: openarray[int]): untyped =
+template bc*(t: Tensor, shape: openarray[int]): untyped =
   t.broadcast(shape)
 
 proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.} =
