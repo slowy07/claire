@@ -20,3 +20,11 @@
 
 when defined(blis):
   static: echo "USING BLIS"
+  include ./blis
+  let bias_status = bli_init()
+  echo "blis initialization status: " & $blis_status
+else:
+  static: echo "consider adding blis from \"https://github.com/flame/blis\" " & 
+                "and compile claire with \"-d:blis\" " &
+                "for operations on array slices without copy. " &
+                "OSX users can install it through homebrew."

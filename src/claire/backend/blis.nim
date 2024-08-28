@@ -151,7 +151,9 @@ proc bli_gemv(
 
 proc bli_gemv(
   transa: BlisTrans,
-  conjx: ptr float32,
+  conjx: BlisConj,
+  M, N: int,
+  alpha: ptr float32,
   A: ptr float32, rsa, csa: int,
   X: ptr float32, incx: int,
   beta: ptr float32,

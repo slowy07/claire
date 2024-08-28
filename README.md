@@ -33,7 +33,13 @@ for deep learning on image, depth representing the color channel and change the 
 
 ## data structure consideration
 
-shape and strides have a static size that is determined at runtime. in terms of indirection, they may be best implemented as VLA (variable length array). inconvenient: two tensor cannot fit in a cache line. there is a high danger of getting caught if your slice shallow copies by default, like numpy does. would a shallowSlice procedure be preferred for safety by default but optional for performance?, note that because NIM is compiled, we may expect that the compiler recognizes circumtances when the original tensor is not reused and moves instead of copying.
+runtime determines the static size of strides and shape. from an indirection persepective, it might be ideal to build them as variable `length` arrays, or `VLAs`. two tensor cannot fit on cache line, which is inconvenient.
+
+
+for the time being, `shallowCopy` will only be utilized in certain locations, such as when we wish to modify the original reference while using a different striding scheme in `slicerMut`. there is not view return from slicing. the compiler is capable of the following optimization, in contrast to python:
+- coppy elision
+- move on assignment
+- detect if the original tensor is not used anymore and the copy is unneeded
 
 ## memory consendirations
 current CPU cache is 64 byte. tensor data structure at 32 bytes has an ideal size. however, every time retrieve the dimension and strides there is a pointer resolution + bounds checking for a static array. you can see data structure consideration section
@@ -42,12 +48,6 @@ reference: [Copy semantic](https://forum.nim-lang.org/t/1793/5) "parameter passi
 
 in depth ([information](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift)) for swift but applicable): performance, safety, and usability
 
-## TODO
-- adding support GPU: CUDA first, OpenCL when AMD gets its act together
-- BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fuse in one operation.
-- tensor addition and subtract of transpose tensor
-- numpy like slicing and dicing, Inconvenient: `proc` might need to copy data into a clean strided tensor
-- support sparse matrices. there is CuSparse for GPU.
 
 ## data structure consendirations
 
@@ -77,6 +77,10 @@ prefer when to use compile-time evaluation. Allow the compiler to do its work. U
 ## performance consendirations
 
 adding `OpenMP` pragma for parallel computing on `fmap` and self-implemted BLAS operations.
+
+## CUDA consideration
+
+all init procedures now take a backend argument (`CPU`, `CUDA`, etc). if backend contains function called `zeros`, `ones`, or `randomTensor`, it will eliminate the need to generate a tensor on the CPU and then transfer it to the backend. the drawback is that the usage auto return types, untyped templates, and when t is tensor complicates the procedures. having a rewrite rule to convert `randomTensor(...).toCuda()` into the straight cuda function is an alternative.
 
 
 > [!NOTE]

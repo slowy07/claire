@@ -18,21 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-proc shape[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.} =
-  result = parent_shape & s.len
-  when (T is seq|array):
-    result = shape(s[0], result)
+proc naive_gemv_fallback[T: SomeInteger](alpha: T, A: Tensor[T], x: Tensor[T], beta: T, y: var Tensor[T]) {.noSideEffect.} =
+  if alpha == 0.T and beta == 1.T: return
+  for val in y.mitems:
+    val *= beta
+  if alpha == 0.T: return
 
-iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.} =
-  for item in s:
-    when item is array|seq:
-      for subitem in flatIter(item):
-        yield subitem
-    else:
-      yield item
-
-proc shape(s: string|seq[char], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.} =
-  if parent_shape == @[]:
-    return @[1]
-  else:
-    return parent_shape
+  var i: int = 0
+  let colA = A.shape[1]
+  for ai in A.axis(0):
+    y[i] = y[i] + alpha * (ai.reshape(colA) .* x)
+    i += 1

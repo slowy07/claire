@@ -29,6 +29,11 @@ const MCKC = MC * KC
 const KCNC = KC * NC
 const MRNR = MR * NR
 
+include ./blas_l3_gemm_packing
+include ./blas_l3_gemm_aux
+include ./blas_l3_gemm_micro_kernel
+include ./blas_l3_gemm_macro_kernel
+
 proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T] {.noSideEffect.} =
   new result
   for i in 0 .. < N:

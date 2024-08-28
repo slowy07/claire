@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 template gemm_micro_kernelT[T](kc: int, alpha: T, A: typed, offA: int, B: typed, offB: int, beta: T, C: typed, offc: int, incRowC, intColC: int): untyped =
+  {.pragma: align16, codegenDecl: "$# $# __attribute__((aligned(16)))"}
   var AB: array[MR*MR,T]
   var voffA = offA
   var voffB = offB
