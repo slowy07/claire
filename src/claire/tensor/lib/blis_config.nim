@@ -26,8 +26,8 @@ type
     BLIS_ALIGNMENT_NOT_MULT_OF_PTR_SIZE = (- 125),
     BLIS_ALIGNMENT_NOT_POWER_OF_TWO = (- 124),
     BLIS_INSUFFICIENT_STACK_BUF_SIZE = (- 123),
-    BLIS_EXHAUSTED_CONFIG_MEMORY_POOL = (- 122),
-    BLIS_REQUESTED_CONFIG_BLOCK_TOO_BIG = (- 121),
+    BLIS_EXHAUSTED_CONTIG_MEMORY_POOL = (- 122),
+    BLIS_REQUESTED_CONTIG_BLOCK_TOO_BIG = (- 121),
     BLIS_INVALID_PACKBUF = (- 120),
     BLIS_EXPECTED_NONNULL_OBJECT_BUFFER = (- 110),
     BLIS_PACK_SCHEMA_NOT_SUPPORTED_FOR_UNPACK = (- 100),
@@ -89,7 +89,7 @@ const
 
 const
   BLIS_BITVAL_TRANS = BLIS_TRANS_BIT
-  BLIS_BITVAL_NO_CONJ = 0x00000000
+  BLIS_BITVAL_NO_CONJ = 0x00000001
   BLIS_BITVAL_CONJ = BLIS_CONJ_BIT
   BLIS_BITVAL_CONJ_TRANS = (BLIS_CONJ_BIT or BLIS_TRANS_BIT)
 
@@ -99,7 +99,7 @@ type
     BLIS_TRANSPOSE = BLIS_BITVAL_TRANS,
     BLIS_CONJ_NO_TRANSPOSE = BLIS_BITVAL_CONJ,
     BLIS_CONJ_TRANSPOSE = BLIS_BITVAL_CONJ_TRANS
-
+    
 type
   BlisConj* {.size: sizeof(cint).} = enum
     BLIS_NO_CONJUGATE = 0x00000000,
@@ -108,19 +108,13 @@ type
 when defined(windows):
   const blisSuffix = ".dll"
 else:
-  # configured for mac os and linux
   const blisSuffix = ".so"
 
 const libblis = "libblis" & blisSuffix
 
-proc bli_init():
-  BlisError {.importc: "bli_init", dynlib: libblis.}
-
-proc bli_finalize():
-  BlisError {.importc: "bli_finalize", dynlib: libblis.}
-
-proc bli_is_initialized():
-  bool {.importc: "bli_is_initialized", dynlib: libblis.}
+proc bli_init(): BlisError {.importc: "bli_init", dynlib: libblis.}
+proc bli_finalize(): BlisError {.importc: "bli_finalize", dynlib: libblis.}
+proc bli_is_initialized(): bool {.importc: "bli_is_initialized", dynlib: libblis.}
 
 proc bli_gemm*(
   transa, transb: BlisTrans,
@@ -131,19 +125,7 @@ proc bli_gemm*(
   beta: ptr float64,
   C: ptr float64, rsc, csc: int,
   cntx: ptr int = nil
-) {. dynlib: libblis, importc: "bli_dgemm" .}
-
-
-proc bli_gemm*(
-  transa, transb: BlisTrans,
-  M, N, K: int,
-  alpha: ptr float32,
-  A: ptr float32, rsa, csa: int,
-  B: ptr float32, rsb, csb: int,
-  beta: ptr float32,
-  C: ptr float32, rsc, csc: int,
-  cntx: ptr int = nil
-) {. dynlib: libblis, importc: "bli_sgemm" .}
+) {.dynlib: libblis, importc: "bli_dgemm".}
 
 proc bli_gemv*(
   transa: BlisTrans,
@@ -155,7 +137,7 @@ proc bli_gemv*(
   beta: ptr float64,
   y: ptr float64, incy: int,
   cntx: ptr int = nil
-) {. dynlib: libblis, importc: "bli_dgemv" .}
+) {.dynlib: libblis, importc: "blid_dgemv".}
 
 proc bli_gemv*(
   transa: BlisTrans,
