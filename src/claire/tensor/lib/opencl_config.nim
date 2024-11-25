@@ -20,5 +20,9 @@
 
 import nimcl, opencl
 
+# global cuda configuration and CuBlas state configuration
 type clResource = PCommandQueue | PKernel | PProgram | PMem | PContext
+
+# TODO: detect, use accelerator (FPGA) or GPU as default
+#       and allow switching to opencl device
 let (clDevice0*, clContext0*, clQueue0*) = singleDeviceDefaults()

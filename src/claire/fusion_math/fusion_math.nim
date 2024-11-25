@@ -18,7 +18,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# import for provide fusion operation, those give either performance improvement
+# or accuracy by avoid catastrophic cancellation
+
+# INFO: author don't create FMA proc as detection of hardware support happens 
+#       at GCC compilation time, furthermore, the fallback is slower than doing
+#       (a*b) + c causing the fallback deos the intermediate computation at
+#       full precision.
+
+## compute ln(1 + x) and avoid catastrophic cancellation if x << 1
+## if x << 1 ln(1 + x) ~= x but normal float rrounding would be ln(1) = 1 instead
 proc ln1p*(x: float32): float32 {.importc: "log1pf", header: "<math.h>".}
 proc ln1p*(x: float64): float64 {.importc: "log1p", header: "<math.h>".}
+
+## coompute exp(x) - 1 and avoid catastrophic cancellation if x ~= 0
+## if x ~= 0 exp(x) - 1 ~= x bit normal float round would do exp(0) - 1 = 0 instead
 proc expm1*(x: float32): float32 {.importc: "expm1f", header: "<math.h>".}
 proc expm1*(x: float64): float64 {.importc: "expm1", header: "<math.h>".}

@@ -26,6 +26,9 @@
 const MAXRANK* = 7
 
 const CUDA_HOF_TPB* = 32 * 32
+# should be (grid-stride + threadsPerBlock - 1) div threadsPerBlock
+# reference: https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
+# lower alloe thread re-use and limit everhead of thread creation/destruction
 const CUDA_HOF_BPG*: cint = 256
 
 # tensor number of elements threshold before using openmp
@@ -33,5 +36,6 @@ const OMP_FOR_THRESHOLD* = 1000
 # max number of expected openmp threads
 const OMP_MAX_REDUCE_BLOCKS* = 8
 
+# processor optiomization (AVX, AVX2, ARM neon ... if aplicable)
 when defined(native):
   {.passC: "-march=native".}

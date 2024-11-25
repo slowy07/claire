@@ -31,6 +31,7 @@ macro overload*(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
 
   impl[3].expectKind nnkFormalParams
   for idx in 1 ..< impl[3].len:
+    # skip arg 0, return type which always empty
     params.add impl[3][idx]
     body.add impl[3][idx][0]
 
@@ -42,4 +43,6 @@ macro overload*(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
   )
 
   when false:
+    # show proc signature
+    # some procs (example: syevr) have 20 param 
     echo result.toStrLit
